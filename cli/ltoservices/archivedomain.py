@@ -15,3 +15,8 @@ class archivedomainService(BaseService):
         dt = { 'name': name }
         data = self.LTO.sendRequest( 'PUT', "/api/v1/archivedomain/new", data=dt )
         return data["status"]
+    
+    def drop( self, name ):
+        data = self.LTO.sendRequest( 'DELETE', "/api/v1/archivedomain/%s" % name )
+        return data
+    

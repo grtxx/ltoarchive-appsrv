@@ -4,7 +4,7 @@ import json
 from io import BytesIO
 from ltoservices.tape import tapeService
 from ltoservices.archivedomain import archivedomainService
-import ltoservices.archivedomain
+from ltoservices.content import contentService
 
 
 class LTOArchive():
@@ -14,7 +14,7 @@ class LTOArchive():
         self.key= ""
         self.tape = tapeService( self )
         self.archivedomain = archivedomainService( self )
-        pass
+        self.content = contentService( self )
 
     
     def sendRequest( self, method, uri, data=None, filedata=None ):
@@ -26,7 +26,7 @@ class LTOArchive():
             c.setopt( c.HTTPHEADER, [ 'Content-Type: multipart/form-data' ] );
             if data:
                 c.setopt( c.POSTFIELDS, data );
-        elif method == 'PATCH' or method == 'PUT':
+        elif method == 'PATCH' or method == 'PUT' or method == "DELETE":
             c.setopt( c.CUSTOMREQUEST, method );
             c.setopt( c.POSTFIELDS, json.dumps( data ) );
         elif method == 'GET':

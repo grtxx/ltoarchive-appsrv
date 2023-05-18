@@ -10,18 +10,16 @@ from tornado_sqlalchemy import SQLAlchemy
 from ltoapi import LTOApi
 import model.variables as variables
 import dbmodel
+import sys
+from model.tape import Tape
 
 
 def main():
     dbmodel.createAll()
-
-    Session = sqlalchemy.orm.sessionmaker()
-    Session.configure(bind=variables.DBEngine)
-    Session = Session()
-
+    
     app = Application(
         ( 
-            ( r'/api/v1/(.*)', LTOApi, { "session": Session } ),
+            ( r'/api/v1/(.*)', LTOApi ),
             ( r"/(.*)", StaticFileHandler, {"path": os.path.join( os.path.dirname( os.path.realpath(__file__) ), "static" ), "default_filename": "index.html" } ),
         )
     )
