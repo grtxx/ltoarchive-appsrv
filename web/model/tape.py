@@ -1,35 +1,32 @@
 import model.variables as variables
-from sqlalchemy import ForeignKey, Column, Unicode, Integer, Boolean
-import threading
 import os
-from model.archivedomain import ArchiveDomain
-from model.file2tape import File2Tape
-from sqlalchemy.orm import relationship
-import model.file as File
+import datetime
+from model.baseentity import BaseEntity
+from model.domain import Domain
+from model.folder import Folder
 
-
-
-class Tape(variables.Base):
-    __tablename__ = variables.TablePrefix + 'Tape'
-    id = Column( Integer, primary_key=True)
-    label = Column( Unicode(length=8, collation='utf8_general_ci') )
-    copyNumber = Column( Integer, index=True )
-    isAvailable = Column( Boolean )
-    isActive = Column( Boolean, default=True)
-    parentTape = Column( Integer, ForeignKey( column=variables.TablePrefix + 'Tape.id' ) )
-
-    files = relationship( "File2Tape", back_populates="tape" )
-
+class Tape(BaseEntity):
+    _tablename = variables.TablePrefix + 'tapes'
+    _fields = [ 'label', 'copyNumber', 'isAvailable', 'isActive', 'created' ]
 
     @staticmethod
-    def createByName( name, session=None ):
-        if ( session == None ):
-            session = variables.getScopedSession()
-        t = session.query(Tape).filter( Tape.label==name ).first();
-        if t:
-            return t
+    def createByName( name ):
+        db = variables.getScopedDb()
+        cur = db.cursor()
+        cur.execute( "SELECT id FROM `%stapes` WHERE label=%%s" % ( variables.TablePrefix ), ( name, ) )
+        id = cur.fetchOneDict()
+        if ( id == None ):
+            tp = Tape()
+            tp.set( 'label', name )
+            return tp
         else:
-            return None
+            return Tape( id["id"] )
+
+
+    def getDefaultData(self):
+        dt = super().getDefaultData()
+        dt['created'] = datetime.datetime.now()
+        return dt
 
 
     def getRoot( self ):
@@ -47,23 +44,31 @@ class Tape(variables.Base):
 
 
     def updateDomainContent( self, d ):
-        session = variables.getScopedSession()
-        session.query(File2Tape).filter(File2Tape.tape==self).delete()
-        domain = ArchiveDomain.createByName( d, session=session )
+        domain = Domain.createByName( d )
+        domain.dropTape( self )
         root = os.path.join( self.getRoot(), d )
         stack = [ "" ]
+        filelist = []
         while len(stack) > 0:
             dir = stack.pop()
-            print( "%s - %s" % ( domain.name, dir ) )
+            print( "[%s] %s - %s" % ( self.label, domain.name, dir ) )
             files = os.listdir( os.path.join( root, dir ) )
             afolder = domain.getFolder( dir )
+            frecs = []
             for f in files:
-                if os.path.isfile( os.path.join( root, dir, f ) ):
-                    hash = File.genHash( os.path.join( root, dir, f ) )
-                    domain.addFileRecord( afolder, f, self.id, hash )
+                fspath = os.path.join( root, dir, f )
+                if os.path.isfile( fspath ):
+#                    files.append( (
+#                        'path': os.path.join( root, dir, f ),
+#                        'hash': File.genHash( path ),
+#                        '
+#                        'frec = domain.addFileRecord( afolder, f, None, hash )
+#                    frec.addCopy( self, path )
                     pass
                 else:
-                    domain.addFolder( afolder, f )
+                    folder = Folder.createByNameParentAndDomain( f, afolder, domain )
+                    if not folder.isValid():
+                        folder.created = datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
+                        folder.save()
                     stack.append( os.path.join( dir, f ) )
-            session.commit()
 

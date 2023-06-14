@@ -53,18 +53,18 @@ class Settings:
 
 
 
-def archivedomainCommands( settings ):
+def domainCommands( settings ):
     LTO = LTOArchive( "%s:%s" % ( settings.get("server"), settings.get("port") ) )
     if settings.getCommand(1) == "list":
-        print( LTO.archivedomain.list() )
+        print( LTO.domain.list() )
 
     if settings.getCommand(1) == "create":
         if settings.getCommand(2) != "":
-            print( LTO.archivedomain.create( settings.getCommand(2) ) )
+            print( LTO.domain.create( settings.getCommand(2) ) )
 
     if settings.getCommand(1) == "drop":
         if settings.getCommand(2) != "":
-            print( LTO.archivedomain.drop( settings.getCommand(2) ) )
+            print( LTO.domain.drop( settings.getCommand(2) ) )
 
 
 def tapeCommands( settings ):
@@ -82,8 +82,8 @@ def tapeCommands( settings ):
 
 def router():
     settings = Settings()
-    if ( settings.getCommand(0) == "archivedomain" ):
-        archivedomainCommands( settings )
+    if ( settings.getCommand(0) == "domain" ):
+        domainCommands( settings )
     if ( settings.getCommand(0) == "tape" ):
         tapeCommands( settings )
 

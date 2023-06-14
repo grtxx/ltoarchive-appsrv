@@ -1,46 +1,77 @@
 import model.variables as variables
-import sqlalchemy
-from sqlalchemy import ForeignKey, Index, Column, Unicode, Integer, Boolean, BigInteger, DateTime
-from sqlalchemy.orm import relationship
-from typing import Optional
+from model.baseentity import BaseEntity
+
+class Folder(BaseEntity):
+    _tablename = variables.TablePrefix + 'folders'
+    _fields = [ 'domainId', 'name', 'size', 'created', 'isDeleted', 'parentFolderId' ]
+    _fullpath = "."
 
 
-class Folder(variables.Base):
-    __tablename__ = variables.TablePrefix + 'Folder'
-    id = Column( Integer, primary_key=True)
-    archiveDomainId = Column( Integer, ForeignKey( column=variables.TablePrefix + 'ArchiveDomain.id' ), nullable = False )
-    name = Column( Unicode(250, collation='utf8_general_ci'), index=True )
-    size = Column( BigInteger, index=True )
-    created = Column( DateTime, index=True )
-    isDeleted = Column( Boolean, default=False, index=True )
-    parentFolderId = Column( Integer, ForeignKey( column=variables.TablePrefix + 'Folder.id' ), nullable = True )
-
-    parentFolder = relationship( "Folder", backref="folders", remote_side=[id] )
-    archiveDomain = relationship( "ArchiveDomain", back_populates="folders" )
-    files = relationship( "File", back_populates="parentFolder" )
-
-    fullPath = ""
+    def __setattr__( self, name, value ):
+        if ( name == "parentFolder" ):
+            if value == None:
+                self.parentFolderId = None
+            else:
+                self.parentFolderId = value.id()
+        else:
+            super().__setattr__( name, value )
 
     @staticmethod
-    def createFolder( domain, parentFolder, name ):
-        session = variables.getScopedSession()
-        f = session.query(Folder).filter( Folder.parentFolder==parentFolder, Folder.name==name, Folder.archiveDomain==domain ).first();
-        if f:
-            return f
+    def createByNameParentAndDomain( name, parentFolder, domain ):
+        db = variables.getScopedDb()
+        f = None
+        cur = db.cursor()
+        if parentFolder == None:
+            cur.execute( "SELECT id FROM %sfolders WHERE name=%%s AND ISNULL(parentFolderId) AND domainId=%%s" % (variables.TablePrefix, ), ( name, domain.id() ) )
         else:
-            folder = Folder( archiveDomain=domain, name=name, parentFolder=parentFolder )
-            return folder
+            cur.execute( "SELECT id FROM %sfolders WHERE name=%%s AND parentFolderId=%%s AND domainId=%%s" % (variables.TablePrefix, ), ( name, parentFolder.id(), domain.id() ) )
+        fId = cur.fetchOneDict()
+        cur.reset()
+        if ( fId == None ):
+            f = Folder()
+            f.parentFolder = parentFolder
+            f.domainId = domain.id()
+            f.name = name
+        else:
+            f = Folder( fId['id'] )
+        return f
+
+
+    @staticmethod
+    def createByPathAndDomain( path, domain ):
+        db = variables.getScopedDb()
+        path = path.split( "/" )
+        currentParent = None
+        f = None
+        for p in path:
+            if ( p != "" ):
+                cur = db.cursor()
+                if currentParent == None:
+                    cur.execute( "SELECT id FROM %sfolders WHERE name=%%s AND ISNULL(parentFolderId) AND domainId=%%s LIMIT 1" % (variables.TablePrefix, ), ( p, domain.id() ) )
+                else:
+                    cur.execute( "SELECT id FROM %sfolders WHERE name=%%s AND parentFolderId=%%s AND domainId=%%s LIMIT 1" % (variables.TablePrefix, ), ( p, currentParent, domain.id() ) )
+                fId = cur.fetchOneDict()
+                cur.reset()
+                if ( fId == None ):
+                    f = Folder()
+                    f.parentFolder = currentParent
+                    f.domainId = domain.id()
+                    f.name = p
+                else:
+                    f = Folder( fId['id'] )
+                currentParent = f.id()
+        return f
     
 
     def getFullPath( self ):
-        if ( self.fullPath == "" ):
+        if ( self._fullPath == "." ):
             path = self.name
             pf = self
-            while pf:
-                pf = pf.parentFolder
-                if pf:
+            while pf.isValid():
+                pf = Folder( pf.parentFolderId )
+                if pf.isValid():
                     path = pf.name + "/" + path
-            self.fullPath = path
+            self._fullPath = path
             return path
         else:
-            return self.fullPath;
+            return self._fullPath;

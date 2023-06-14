@@ -13,8 +13,6 @@ class TapeContentUpdaterThread( threading.Thread ):
         variables.Threads.add( self, 'update-tape-content' )
     
     def run( self ):
-        session = variables.getScopedSession()
-        tape = Tape.createByName( self.tapeName, session=session )
+        tape = Tape.createByName( self.tapeName )
         tape.updateContent()
-        variables.dropScopedSession()
-
+        variables.dropScopedDb()

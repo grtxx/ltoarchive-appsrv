@@ -1,24 +1,55 @@
-from sqlalchemy.ext.declarative import declarative_base
-import sqlalchemy
+import mysql.connector
+import mysql.connector.cursor_cext
 from model.threadlist import threadlist
-from sqlalchemy.orm import scoped_session
 import threading 
 
-DBEngine = sqlalchemy.create_engine( "mysql+mysqlconnector://lto:LTPs.sWRD@127.0.0.1:3306/um_archive?charset=utf8" )
 
-def getSessionFactory():
-    Session = scoped_session(sqlalchemy.orm.sessionmaker( bind=DBEngine ))
-    return Session
+# no result execute on db
+def cmd( self, query, params ):
+    cur = self.cursor()
+    cur.execute( query, params )
+    cur.reset()
+    self.commit()
 
 
-def getScopedSession():
+# Extending cursor class with a new fetchOneDict method
+def fetchonedict( self ):
+    row = self.fetchone()
+    if row != None:
+        d = {}
+        for idx,col in enumerate( self.description ):
+            d[ col[0] ] = row[idx]
+        return d
+    else:
+        return None
+    
+mysql.connector.cursor_cext.CMySQLCursor.fetchOneDict = fetchonedict
+mysql.connector.CMySQLConnection.cmd = cmd
+
+
+def getDbConnection():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="lto",
+        password="LTPs.sWRD",
+        database="um_archive"
+    )
+    cur = db.cursor()
+    cur.execute( "SET NAMES utf8", () )
+    db.commit()
+
+    return db
+
+
+def getScopedDb():
     tid = str(threading.current_thread().ident)
     if ( tid not in sessionMap ):
-        scopedsession = getSessionFactory()
-        sessionMap[tid] = scopedsession()
+        scopedDb = getDbConnection()
+        sessionMap[tid] = scopedDb
+    sessionMap[tid].ping( reconnect=True )
     return sessionMap[tid]
 
-def dropScopedSession():
+def dropScopedDb():
     tid = str(threading.current_thread().ident)
     if ( tid in sessionMap ):
         sessionMap[tid].close()
@@ -30,8 +61,6 @@ TablePrefix = ""
 LTFSRoot = "/mnt/LTFS"
 Threads = threadlist()
 sessionMap = {}
-
-Base = declarative_base()
 
 # LTO related settings
 vea_pre = "user."

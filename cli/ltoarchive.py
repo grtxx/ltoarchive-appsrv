@@ -3,7 +3,7 @@ import re
 import json
 from io import BytesIO
 from ltoservices.tape import tapeService
-from ltoservices.archivedomain import archivedomainService
+from ltoservices.domain import domainService
 from ltoservices.content import contentService
 
 
@@ -13,7 +13,7 @@ class LTOArchive():
         self.server = server
         self.key= ""
         self.tape = tapeService( self )
-        self.archivedomain = archivedomainService( self )
+        self.domain = domainService( self )
         self.content = contentService( self )
 
     

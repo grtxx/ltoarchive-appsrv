@@ -1,30 +1,14 @@
 import model.variables as variables
-from sqlalchemy import ForeignKey, Column, Unicode, Integer, Boolean, VARBINARY, BigInteger, DateTime
-from typing import Optional
-from sqlalchemy.orm import relationship
 from model.folder import Folder
-from model.file2tape import File2Tape
+from model.baseentity import BaseEntity
 import re
 import os
 import hashlib
 import datetime
 
-class File(variables.Base):
+class File(BaseEntity):
     __tablename__ = variables.TablePrefix + 'File'
-    id = Column( Integer, primary_key=True)
-    archiveDomainId = Column( Integer, ForeignKey( column=variables.TablePrefix + 'ArchiveDomain.id' ) )
-    name = Column( Unicode(length=250), index=True )
-    ext = Column( Unicode(length=32), index=True )
-    parentFolderId = Column( Integer, ForeignKey( column=variables.TablePrefix + 'Folder.id' ) )
-    hash = Column( Unicode(48), index=True )
-    size = Column( BigInteger, index=True )
-    created = Column( DateTime, index=True )
-    isOnline = Column( Boolean, index=True )
-    isDeleted = Column( Boolean, index=True, default=False )
-
-    archiveDomain = relationship( "ArchiveDomain", back_populates="files" )
-    copies = relationship( "File2Tape", back_populates="filerecord" )
-    parentFolder = relationship( "Folder", back_populates="files" )
+    _fields = ( 'domainId', 'folderId', 'name', 'ext', 'hash', 'size', 'created', 'isOnline', 'isDeleted' )
         
     @staticmethod
     def createFile( domain, parentFolder, name, hash, session=None):
@@ -58,21 +42,24 @@ class File(variables.Base):
         return self
     
 
-    def addCopy( self, tape ):
-        fullpath = ""
-        if ( self.parentFolder ):
-            fullpath = self.parentFolder.getFullPath()
-        fspath = os.path.join( variables.LTFSRoot, tape.label, self.archiveDomain.name, fullpath, self.name )
+    def addCopy( self, tape, fullpath = None ):
+        if ( fullpath == None ):
+            fullpath = ""
+            if ( self.parentFolder ):
+                fullpath = self.parentFolder.getFullPath()
+            fspath = os.path.join( variables.LTFSRoot, tape.label, self.archiveDomain.name, fullpath, self.name )
+        else:
+            fspath = fullpath
         if ( len( self.copies ) == 0 ):
-            self.created = datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
-            self.size = os.path.getsize( fspath )
+                self.created = datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
+                self.size = os.path.getsize( fspath )
         ok = True
         for c in self.copies:
             if c.tape == tape:
                 ok = False
         if ok:
             f2t = File2Tape.createByFileAndTape( self, tape )
-            f2t.updateMeta()        
+            f2t.updateMeta( fspath )
 
 
 def genHash( fspath ):

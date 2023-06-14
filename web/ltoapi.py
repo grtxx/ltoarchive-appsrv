@@ -4,7 +4,9 @@ import re
 import json
 import model.variables as variables
 from model.tape import Tape
-from model.archivedomain import ArchiveDomain
+from model.domain import Domain
+from model.tapecollection import TapeCollection
+from model.domaincollection import DomainCollection
 from controller.tapecontentupdaterthread import TapeContentUpdaterThread
 
 
@@ -24,11 +26,11 @@ class LTOApi(tornado.web.RequestHandler):
         return [
             { "method": "get",    "target": self.getFolder,            "pattern": r"^content/([^/]+)/getfolder(/.*)" },
             { "method": "get",    "target": self.getTapeList,          "pattern": r"^tape/list$" },
-            { "method": "get",    "target": self.getArchivedomainList, "pattern": r"^archivedomain/list$" },
+            { "method": "get",    "target": self.getDomainList,        "pattern": r"^domain/list$" },
 
-            { "method": "delete", "target": self.dropArchiveDomain,    "pattern": r"^archivedomain/(.+)$" },
+            { "method": "delete", "target": self.dropDomain,           "pattern": r"^domain/(.+)$" },
 
-            { "method": "put",    "target": self.putArchiveDomain,     "pattern": r"^archivedomain/new$" },
+            { "method": "put",    "target": self.putDomain,            "pattern": r"^domain/new$" },
             { "method": "put",    "target": self.tape_new,             "pattern": r"^tape/new$" },
             { "method": "patch",  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
         ]
@@ -58,37 +60,27 @@ class LTOApi(tornado.web.RequestHandler):
 
 
     def tape_new( self, groups ):
-        session = variables.getScopedSession()
-        try:
+        #try:
             args = json.loads( self.request.body )
-            if ( args['label'] != "" and args['copyNumber'] != "" ):
-                tape = session.query(Tape).filter( Tape.label==args['label'] ).first()
-                if ( not tape ):
-                    tape = Tape( label=args['label'], copyNumber=args['copyNumber'] )
-                    session.add( tape )
-                    session.commit()
-                    return routeResult( 200, "ok", {} )
-                else:
-                    tape.isActive = True
-                    tape.copyNumber = args['copyNumber']
-                    session.add( tape )
-                    session.commit()
-                    return routeResult( 202, "tape-updated", {} )
-        except Exception as e:
-            return routeResult( 500, "server-error: %s" % str(e), str(e) )
+            tape = Tape.createByName( args['label'] )
+            tape.set( 'copyNumber', args['copyNumber'] )
+            tape.set( 'isActive', 1 )
+            tape.save()
+            return routeResult( 202, "tape-updated", {} )
+        #except Exception as e:
+        #    return routeResult( 500, "server-error: %s" % str(e), str(e) )
         
 
     def tape_updateContent( self, groups ):
-        session = variables.getScopedSession()
-        tape = session.query(Tape).filter( Tape.label==groups[1] ).first()
-        if tape:
+        tape = Tape.createByName( groups[1] )
+        if tape.isValid():
             tc = TapeContentUpdaterThread( groups[1] )
             return routeResult( 200, "queued", {} )
         else:
             return routeResult( 404, "tape-not-found", {} )
 
 
-    def dropArchiveDomain( self, groups ):
+    def dropDomain( self, groups ):
         session = variables.getScopedSession()
         try:
             aDomain = session.query(ArchiveDomain).filter( ArchiveDomain.name==groups[1] ).first()
@@ -103,7 +95,7 @@ class LTOApi(tornado.web.RequestHandler):
             return routeResult( 500, "server-error", { "message": str(e) } )
 
 
-    def putArchiveDomain( self, groups ):
+    def putDomain( self, groups ):
         session = variables.getScopedSession()
         try:
             args = json.loads( self.request.body )
@@ -124,21 +116,19 @@ class LTOApi(tornado.web.RequestHandler):
 
 
     def getTapeList( self, groups ):
-        session = variables.getScopedSession()
+        tapes = TapeCollection()
         tapelist = []
-        tapes = session.query(Tape).all()
         for tape in tapes:
-            tapelist.append( { "label": tape.label, 'isAvailable': tape.isAvailable, 'copyNumber': tape.copyNumber } )
+            tapelist.append( { "label": tape.get("label"), 'isAvailable': tape.get("isAvailable"), 'copyNumber': tape.get("copyNumber") } )
         return routeResult( 200, "ok", tapelist )
 
 
-    def getArchivedomainList( self, groups ):
-        session = variables.getScopedSession()
-        arcdomainList = []
-        domains = session.query(ArchiveDomain).filter( ArchiveDomain.isActive == True )
+    def getDomainList( self, groups ):
+        domains = DomainCollection()
+        domainList = ()
         for dom in domains:
-            arcdomainList.append( { "name": dom.name } )
-        return routeResult( 200, "ok", arcdomainList )
+            domainList = domainList + ( { "id": dom.id(), "name": dom.name }, )
+        return routeResult( 200, "ok", domainList )
 
 
     def getFolder( self, groups ):

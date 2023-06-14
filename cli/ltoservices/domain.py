@@ -2,10 +2,10 @@ import json
 from ltoservices.baseservice import BaseService
 
 
-class archivedomainService(BaseService):
+class domainService(BaseService):
 
     def list( self ):
-        data = self.LTO.sendRequest('GET', "/api/v1/archivedomain/list" )
+        data = self.LTO.sendRequest('GET', "/api/v1/domain/list" )
         if ( data["status"] == 200 ):
             return data["data"]["data"]
         else:
@@ -13,10 +13,10 @@ class archivedomainService(BaseService):
 
     def create( self, name ):
         dt = { 'name': name }
-        data = self.LTO.sendRequest( 'PUT', "/api/v1/archivedomain/new", data=dt )
+        data = self.LTO.sendRequest( 'PUT', "/api/v1/domain/new", data=dt )
         return data["status"]
     
     def drop( self, name ):
-        data = self.LTO.sendRequest( 'DELETE', "/api/v1/archivedomain/%s" % name )
+        data = self.LTO.sendRequest( 'DELETE', "/api/v1/domain/%s" % name )
         return data
     

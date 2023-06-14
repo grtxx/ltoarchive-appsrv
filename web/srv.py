@@ -15,7 +15,6 @@ from model.tape import Tape
 
 
 def main():
-    dbmodel.createAll()
     
     app = Application(
         ( 
