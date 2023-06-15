@@ -1,9 +1,11 @@
 import model.variables as variables
 import os
 import datetime
+import xattr
 from model.baseentity import BaseEntity
 from model.domain import Domain
 from model.folder import Folder
+import model.file
 
 class Tape(BaseEntity):
     _tablename = variables.TablePrefix + 'tapes'
@@ -48,22 +50,35 @@ class Tape(BaseEntity):
         domain.dropTape( self )
         root = os.path.join( self.getRoot(), d )
         stack = [ "" ]
-        filelist = []
         while len(stack) > 0:
+            filelist = []
             dir = stack.pop()
             print( "[%s] %s - %s" % ( self.label, domain.name, dir ) )
             files = os.listdir( os.path.join( root, dir ) )
             afolder = domain.getFolder( dir )
-            frecs = []
             for f in files:
                 fspath = os.path.join( root, dir, f )
                 if os.path.isfile( fspath ):
-#                    files.append( (
-#                        'path': os.path.join( root, dir, f ),
-#                        'hash': File.genHash( path ),
-#                        '
-#                        'frec = domain.addFileRecord( afolder, f, None, hash )
-#                    frec.addCopy( self, path )
+                    stb = 0
+                    try:
+                        rawattr = xattr.getxattr( fspath, "%sltfs.startblock" % ( variables.vea_pre, ) )
+                        if ( rawattr != None ):
+                            stb = int( str( bytearray( rawattr ), 'UTF-8' ) )
+                    except:
+                        pass
+                    n, ext = os.path.splitext( f )
+                    filelist.append( {
+                        'name': f,
+                        'ext': ext,
+                        'path': os.path.join( dir, f ),
+                        'hash': model.file.genHash( fspath ),
+                        'domain': domain,
+                        'tape': self,
+                        'parentFolder': afolder,
+                        'startblock': stb,
+                        'size': os.path.getsize( fspath ),
+                        'created': datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
+                    } )
                     pass
                 else:
                     folder = Folder.createByNameParentAndDomain( f, afolder, domain )
@@ -71,4 +86,4 @@ class Tape(BaseEntity):
                         folder.created = datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
                         folder.save()
                     stack.append( os.path.join( dir, f ) )
-
+            domain.addFilesBulk( filelist )

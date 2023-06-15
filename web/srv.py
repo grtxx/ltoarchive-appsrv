@@ -5,13 +5,9 @@ import tornado
 import tornado.ioloop
 from tornado.web import Application
 from tornado.web import StaticFileHandler
-import sqlalchemy
-from tornado_sqlalchemy import SQLAlchemy 
 from ltoapi import LTOApi
 import model.variables as variables
-import dbmodel
-import sys
-from model.tape import Tape
+import xattr
 
 
 def main():

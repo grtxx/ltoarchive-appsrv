@@ -10,19 +10,36 @@ class File(BaseEntity):
     __tablename__ = variables.TablePrefix + 'File'
     _fields = ( 'domainId', 'folderId', 'name', 'ext', 'hash', 'size', 'created', 'isOnline', 'isDeleted' )
         
-    @staticmethod
-    def createFile( domain, parentFolder, name, hash, session=None):
-        if ( session == None ):
-            session = variables.getScopedSession()
-        f = session.query(File).filter( File.parentFolder==parentFolder, File.name==name, File.archiveDomain==domain, File.hash == hash.encode('UTF-8') ).first();
-        if f:
-            return f
+
+    def __setattr__( self, name, value ):
+        if ( name == "parentFolder" ):
+            if value == None:
+                self.parentFolderId = None
+            else:
+                self.parentFolderId = value.id()
         else:
-            file = File( archiveDomain=domain, parentFolder = parentFolder, hash = hash )
-            session.add( file )
-            file.setName( name )
-            session.commit()
-            return file
+            super().__setattr__( name, value )
+
+    @staticmethod
+    def createFile( domain, parentFolder, name, hash):
+        db = variables.getScopedDb()
+        f = None
+        cur = db.cursor()
+        if parentFolder == None:
+            cur.execute( "SELECT id FROM %sfiles WHERE name=%%s AND ISNULL(parentFolderId) AND domainId=%%s" % (variables.TablePrefix, ), ( name, domain.id() ) )
+        else:
+            cur.execute( "SELECT id FROM %sfiles WHERE name=%%s AND parentFolderId=%%s AND domainId=%%s" % (variables.TablePrefix, ), ( name, parentFolder.id(), domain.id() ) )
+        fId = cur.fetchOneDict()
+        cur.reset()
+        if ( fId == None ):
+            f = File()
+            f.parentFolder = parentFolder
+            f.domainId = domain.id()
+            f.name = name
+            f.hash = hash
+        else:
+            f = File( fId['id'] )
+        return f
 
 
     def getFullPath( self ):
