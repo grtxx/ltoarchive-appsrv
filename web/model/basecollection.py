@@ -4,8 +4,8 @@ from model.baseentity import BaseEntity
 
 class BaseCollection:
     _itemClass = BaseEntity
-    _ids = ()
-    _filters = ()
+    _ids = []
+    _filters = {}
     _loaded = False
     _iterCursor = 0
 
@@ -23,26 +23,27 @@ class BaseCollection:
         return res
 
     def setFilter( self, name, value ):
-        self._filters.append( { "name": name, "value": value } )
+        self._filters[name] = value
 
 
-    def sqlCondition( name, value ):
+    def sqlCondition( self, name, value ):
         pass
 
 
     def buildFilterSql( self ):
-        sqls = ( "1" )
-        vars = ()
-        for f in self._filters:
-            cond = self.sqlCondition( f["name"], f["value"] )
+        sqls = [ "1" ]
+        vars = []
+        for k in self._filters:
+            cond = self.sqlCondition( k, self._filters[k] )
+            #cond["sql"] = cond["sql"].replace( "%", "%%" )
             sqls.append( cond["sql"] )
             for k in cond["vars"]:
-                vars.append( cond["vars"][k] )
-        return { "sql": sqls, "vars": vars }
+                vars.append( k )
+        return { "sql": sqls, "vars": vars, "wherecondition": "(" + ") AND (".join( sqls ) + ")" }
     
 
     def clear( self ):
-        self._ids = ()
+        self._ids = []
         self._loaded = True
 
 
@@ -53,12 +54,12 @@ class BaseCollection:
             db = model.variables.getScopedDb()
             cur = db.cursor()
             sqlcond = self.buildFilterSql()
-            sql = "SELECT `%s` FROM `%s` WHERE %s ORDER BY %s" % ( ditem._idField, ditem._tablename, "(" + ( ") AND (".join( sqlcond["sql"] ) ) + ")", ditem._idField )            
+            sql = "SELECT `%s` FROM `%s` WHERE %s ORDER BY %s" % ( ditem._idField, ditem._tablename, sqlcond["wherecondition"], ditem._idField )            
             cur.execute( sql, sqlcond["vars"] )
-            self._ids = ()
+            self._ids = []
             item = cur.fetchOneDict()
             while item != None:
-                self._ids = self._ids + ( item[ditem._idField], )
+                self._ids.append( item[ditem._idField] )
                 item = cur.fetchOneDict()
             self._loaded = True
 

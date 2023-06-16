@@ -5,7 +5,7 @@ import threading
 
 
 # no result execute on db
-def cmd( self, query, params ):
+def cmd( self, query, params=None ):
     cur = self.cursor()
     cur.execute( query, params )
     cur.reset()

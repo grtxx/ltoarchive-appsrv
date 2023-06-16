@@ -50,6 +50,8 @@ class Tape(BaseEntity):
         domain.dropTape( self )
         root = os.path.join( self.getRoot(), d )
         stack = [ "" ]
+        topfolders = []
+        folders = []
         while len(stack) > 0:
             filelist = []
             dir = stack.pop()
@@ -86,4 +88,30 @@ class Tape(BaseEntity):
                         folder.created = datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
                         folder.save()
                     stack.append( os.path.join( dir, f ) )
+                    if afolder == None:
+                        topfolders.append( folder )
+                    folders.append( folder )
             domain.addFilesBulk( filelist )
+        self._updateOldVersions( folders )
+        self._updateTopFolders( topfolders )
+
+
+    def _updateTopFolders( self, topfolders ):
+        print( "Updating folder size..." )
+        for topfolder in topfolders:
+            print( "\t%s" % ( topfolder.name, ) )
+            topfolder.updateSize()
+
+
+    def _updateOldVersions( self, folders ):
+        db = variables.getScopedDb()
+        print( "Updating shadow files..." )
+        db.cmd( "CREATE TEMPORARY TABLE updateOldV (id int primary key not null)" )
+        for folder in folders:
+            print( "\t%s" % ( folder.name, ) )
+            db.cmd( "UPDATE %sfiles SET isOldVersion=0 WHERE parentFolderId=%%s" % (variables.TablePrefix, ), [ folder.id() ] )
+            db.cmd( "INSERT IGNORE INTO updateOldV SELECT id FROM %sfiles AS f WHERE parentFolderId=%%s AND domainId=%%s AND EXISTS (SELECT id FROM %sfiles AS ff WHERE ff.created>f.created AND ff.parentFolderId=f.parentFolderId AND ff.domainId=f.domainId AND ff.name=f.name)" % ( variables.TablePrefix, variables.TablePrefix,  ), [ folder.id(), folder.domainId ] )
+        print( "\tcommit..." )            
+        db.cmd( "UPDATE %sfiles SET isOldVersion=1 WHERE id IN (SELECT id FROM updateOldV)" % ( variables.TablePrefix, ) )
+        db.cmd( "DROP TABLE updateOldV" )
+        db.commit()

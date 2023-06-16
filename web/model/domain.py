@@ -56,7 +56,7 @@ class Domain(BaseEntity):
         recs2 = []
         delrecs = []
         for f in filelist:
-            rec = ( f["tape"].id(), f["domain"].id(), f["parentFolder"].id() or None, f["hash"], f["startblock"] )
+            rec = ( f["tape"].id(), f["domain"].id(), None if f["parentFolder"] == None else f["parentFolder"].id(), f["hash"], f["startblock"] )
             rec2 = ( None if f["parentFolder"] == None else f["parentFolder"].id(), f["domain"].id(), f["name"], f["ext"], f["hash"], f["size"], f["created"] )
             delrec = ( None if f["parentFolder"] == None else f["parentFolder"].id(), f["domain"].id(), f["hash"] )
             recs.append( rec )

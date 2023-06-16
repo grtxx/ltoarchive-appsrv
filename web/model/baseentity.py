@@ -122,3 +122,8 @@ class BaseEntity():
             sql = "UPDATE %s SET %s WHERE %s=%d" % ( self._tablename, ", ".join( sqlfields ), self._idField, self._id )
             db.cmd( sql, sqlvals )
             db.commit()
+
+
+    def getData( self ):
+        self.cacheIf()
+        return self._data

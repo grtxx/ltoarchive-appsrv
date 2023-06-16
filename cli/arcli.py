@@ -2,6 +2,7 @@
 
 import sys
 import re
+import json
 from ltoarchive import LTOArchive
 
 
@@ -13,7 +14,8 @@ class Settings:
         self.cmdlineopts = [
             { "short": "s", "long": "server", "default": "http://127.0.0.1" },
             { "short": "p", "long": "port", "default": "8000" },
-            { "short": "n", "long": "copynumber", "default": "0" }
+            { "short": "n", "long": "copynumber", "default": "0" },
+            { "short": "d", "long": "domain", "default": "" }
         ]
         self.parseArgs()
 
@@ -70,7 +72,7 @@ def domainCommands( settings ):
 def tapeCommands( settings ):
     LTO = LTOArchive( "%s:%s" % ( settings.get("server"), settings.get("port") ) )
     if settings.getCommand(1) == "list":
-        print( LTO.tape.list() )
+        print( json.dumps( LTO.tape.list(), indent=4 ) )
 
     if settings.getCommand(1) == "add":
         if settings.getCommand(2) != "" and settings.get('copynumber') != "":
@@ -80,12 +82,21 @@ def tapeCommands( settings ):
         print( LTO.tape.updateContent( settings.getCommand(2) ) )
 
 
+def projectCommands( settings ):
+    LTO = LTOArchive( "%s:%s" % ( settings.get("server"), settings.get("port") ) )
+    if settings.getCommand(1) == "check":
+        print( LTO.project.check( settings.get('domain'), settings.getCommand(2) ) )
+
+
+
 def router():
     settings = Settings()
     if ( settings.getCommand(0) == "domain" ):
         domainCommands( settings )
     if ( settings.getCommand(0) == "tape" ):
         tapeCommands( settings )
+    if ( settings.getCommand(0) == "project" ):
+        projectCommands( settings )
 
 
 router()

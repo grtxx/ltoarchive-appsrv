@@ -5,6 +5,7 @@ from io import BytesIO
 from ltoservices.tape import tapeService
 from ltoservices.domain import domainService
 from ltoservices.content import contentService
+from ltoservices.project import projectService
 
 
 class LTOArchive():
@@ -15,6 +16,7 @@ class LTOArchive():
         self.tape = tapeService( self )
         self.domain = domainService( self )
         self.content = contentService( self )
+        self.project = projectService( self )
 
     
     def sendRequest( self, method, uri, data=None, filedata=None ):

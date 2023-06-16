@@ -38,6 +38,24 @@ class Folder(BaseEntity):
 
 
     @staticmethod
+    def createByCodeAndDomain( code, domain ):
+        db = variables.getScopedDb()
+        f = None
+        cur = db.cursor()
+        cur.execute( "SELECT id FROM %sfolders WHERE name LIKE %%s AND ISNULL(parentFolderId) AND domainId=%%s" % (variables.TablePrefix, ), ( code + "%", domain.id() ) )
+        fId = cur.fetchOneDict()
+        cur.reset()
+        if ( fId == None ):
+            f = Folder()
+            f.parentFolder = None
+            f.domainId = domain.id()
+            f.name = code
+        else:
+            f = Folder( fId['id'] )
+        return f
+
+
+    @staticmethod
     def createByPathAndDomain( path, domain ):
         db = variables.getScopedDb()
         path = path.split( "/" )
@@ -74,4 +92,28 @@ class Folder(BaseEntity):
             self._fullPath = path
             return path
         else:
-            return self._fullPath;
+            return self._fullPath
+
+    def getSubFolders( self ):
+        from model.foldercollection import FolderCollection
+        coll = FolderCollection()
+        coll.setFilter( 'parentFolderId', self.id() )
+        return coll
+
+
+    def getFiles( self ):
+        from model.filecollection import FileCollection
+        coll = FileCollection()
+        coll.setFilter( 'parentFolderId', self.id() )
+        return coll
+    
+
+    def updateSize( self ):
+        if self.isValid():
+            size = 0
+            for f in self.getSubFolders():
+                f.updateSize()
+                size = size + f.size
+            size = size + self.getFiles().getSumSize()
+            self.size = size
+            self.save()

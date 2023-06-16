@@ -6,7 +6,7 @@ from model.basecollection import BaseCollection
 class DomainCollection(BaseCollection):
     _itemClass = Domain
 
-    def sqlCondition( name, value ):
+    def sqlCondition( self, name, value ):
         if name == "name":
-            return {  "sql": "domains.name=\%s", "vars": ( value ) }
+            return {  "sql": "domains.name=%s", "vars": ( value ) }
         pass
