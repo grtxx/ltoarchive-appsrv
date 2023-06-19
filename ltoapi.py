@@ -2,21 +2,26 @@
 import tornado.web
 import re
 import json
-import model.variables as variables
+import datetime
 from model.tape import Tape
-from model.domain import Domain
 from model.tapecollection import TapeCollection
-from model.domaincollection import DomainCollection
 from model.routeresult import RouteResult
+from model.session import Session
 from controller.tapecontentupdaterthread import TapeContentUpdaterThread
 from controller.apiservice_project import ApiService_project
+from controller.apiservice_user import ApiService_user
+from controller.apiservice_domain import ApiService_domain
 
 
 class LTOApi(tornado.web.RequestHandler):
     _services = []
+    _sessions = {}
+    _lastSessionCleanup = 0
 
     def initialize( self ):
+        self.addService( ApiService_domain() )
         self.addService( ApiService_project() )
+        self.addService( ApiService_user() )
 
 
     def addService( self, srvObj ):
@@ -25,15 +30,11 @@ class LTOApi(tornado.web.RequestHandler):
 
     def routes( self ):
         routes = [
-            { "method": "get",    "target": self.getFolder,            "pattern": r"^content/([^/]+)/getfolder(/.*)" },
-            { "method": "get",    "target": self.getTapeList,          "pattern": r"^tape/list$" },
-            { "method": "get",    "target": self.getDomainList,        "pattern": r"^domain/list$" },
+            { "method": "get",    "auth": False, "target": self.getFolder,            "pattern": r"^content/([^/]+)/getfolder(/.*)" },
+            { "method": "get",    "auth": False, "target": self.getTapeList,          "pattern": r"^tape/list$" },
 
-            { "method": "delete", "target": self.dropDomain,           "pattern": r"^domain/(.+)$" },
-
-            { "method": "put",    "target": self.putDomain,            "pattern": r"^domain/new$" },
-            { "method": "put",    "target": self.tape_new,             "pattern": r"^tape/new$" },
-            { "method": "patch",  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
+            { "method": "put",    "auth": True,  "target": self.tape_new,             "pattern": r"^tape/new$" },
+            { "method": "patch",  "auth": True,  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
         ]
         for s in self._services:
             sroutes = s.getRoutes()
@@ -42,16 +43,58 @@ class LTOApi(tornado.web.RequestHandler):
         return routes
     
 
+    def sessionCleanup( self ):
+        if ( datetime.time() > self._lastSessionCleanup + 10 ):
+            self._lastSessionCleanup = datetime.time()
+            for s in self._sessions:
+                if self._sessions[s].lastAction < datetime.time() + 600:
+                    self._sessions.pop( s )
+
+
+    def auth( self, r ):
+        if ( r["auth"] == None or r["auth"] == False ):
+            return None
+        sessionId = self.request.headers.get( "X-SessionId")
+        accessToken = self.request.headers.get( "X-AcccessToken")
+        queryGuid = self.request.headers.get( "X-QueryGuid")
+        signature = self.request.headers.get( "X-Signature")
+        self.sessionCleanup()
+        session = None
+        if sessionId != None:
+            if ( self._sessions[ sessionId ] ):
+                session = self._sessions[ sessionId ]
+            else:
+                session = Session.createByToken( sessionId )
+        if accessToken != None:
+            if ( self._sessions[ accessToken ] ):
+                session = self._sessions[ accessToken ]
+                if not session.auth( queryGuid, signature ):
+                    session = None
+            else:
+                session = Session.appAuth( accessToken, queryGuid, signature )
+        if session == None:
+            session = Session()
+        return session
+
+
+    def executeRoute( self, r, groups ):
+        session = self.auth( r )
+        if ( r["auth"]==False or session!=None ):
+            res = r["target"]( groups, session )
+        else:
+            res = RouteResult( 500, "query-not-authenticated", {} )
+        self.output( res )
+
     def route( self, uri ):
         routeSucceeded = False
         for r in self.routes():
-            if ( r["method"] == self.request.method.lower() ):
-                reg = re.compile( r["pattern"] )
-                groups = reg.match( uri )
-                if ( groups and routeSucceeded == False ):
-                    res = r["target"]( groups )
-                    self.output( res )
-                    routeSucceeded = True
+            if routeSucceeded == False:
+                if ( r["method"] == self.request.method.lower() ):
+                    reg = re.compile( r["pattern"] )
+                    groups = reg.match( uri )
+                    if ( groups ):
+                        self.executeRoute( r, groups )
+                        routeSucceeded = True
         if ( not routeSucceeded ):
             self.output( RouteResult( 404, "endpoint-not-found", {} ) )
 
@@ -61,8 +104,6 @@ class LTOApi(tornado.web.RequestHandler):
         self.write( json.dumps( res, indent=4, sort_keys=True, default=str ) )
         self._status_code = result.statuscode
         self.set_header( "Content-Type", "application/json" )
-
-
 
 
     def tape_new( self, groups ):
@@ -86,55 +127,12 @@ class LTOApi(tornado.web.RequestHandler):
             return RouteResult( 404, "tape-not-found", {} )
 
 
-    def dropDomain( self, groups ):
-        session = variables.getScopedSession()
-        try:
-            aDomain = session.query(ArchiveDomain).filter( ArchiveDomain.name==groups[1] ).first()
-            if ( aDomain ):
-                aDomain.isActive = False
-                aDomain.kill()
-                session.commit()
-                return RouteResult( 200, "ok", {} )
-            else:
-                return RouteResult( 404, "not found", {} )
-        except Exception as e:
-            return RouteResult( 500, "server-error", { "message": str(e) } )
-
-
-    def putDomain( self, groups ):
-        session = variables.getScopedSession()
-        try:
-            args = json.loads( self.request.body )
-            if ( args['name'] != "" ):
-                domain = session.query(ArchiveDomain).filter( ArchiveDomain.name==args['name'] ).first()
-                if ( not domain ):
-                    session.add( ArchiveDomain(name=args['name'] ) )
-                    session.commit()
-                    return RouteResult( 200, "ok", {} )
-                elif ( domain.isActive == False ):
-                    domain.isActive = True;
-                    session.commit()
-                    return RouteResult( 202, "domain-reactivated", {} )
-                else:
-                    return RouteResult( 201, "already-exists", {} )
-        except Exception as e:
-            return RouteResult( 500, "server-error", { "message": str(e) } )
-
-
     def getTapeList( self, groups ):
         tapes = TapeCollection()
         tapelist = []
         for tape in tapes:
             tapelist.append( { "id": tape.id(), "label": tape.get("label"), 'isAvailable': tape.get("isAvailable"), 'copyNumber': tape.get("copyNumber") } )
         return RouteResult( 200, "ok", tapelist )
-
-
-    def getDomainList( self, groups ):
-        domains = DomainCollection()
-        domainList = ()
-        for dom in domains:
-            domainList = domainList + ( { "id": dom.id(), "name": dom.name }, )
-        return RouteResult( 200, "ok", domainList )
 
 
     def getFolder( self, groups ):

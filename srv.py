@@ -6,8 +6,6 @@ import tornado.ioloop
 from tornado.web import Application
 from tornado.web import StaticFileHandler
 from ltoapi import LTOApi
-import model.variables as variables
-import xattr
 
 
 def main():
