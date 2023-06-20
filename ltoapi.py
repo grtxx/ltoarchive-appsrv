@@ -3,6 +3,7 @@ import tornado.web
 import re
 import json
 import datetime
+import time
 from model.tape import Tape
 from model.tapecollection import TapeCollection
 from model.routeresult import RouteResult
@@ -44,10 +45,10 @@ class LTOApi(tornado.web.RequestHandler):
     
 
     def sessionCleanup( self ):
-        if ( datetime.time() > self._lastSessionCleanup + 10 ):
-            self._lastSessionCleanup = datetime.time()
+        if ( time.time() > self._lastSessionCleanup + 10 ):
+            self._lastSessionCleanup = time.time()
             for s in self._sessions:
-                if self._sessions[s].lastAction < datetime.time() + 600:
+                if self._sessions[s].lastAction < time.time() + 600:
                     self._sessions.pop( s )
 
 
@@ -118,7 +119,7 @@ class LTOApi(tornado.web.RequestHandler):
         #    return RouteResult( 500, "server-error: %s" % str(e), str(e) )
         
 
-    def tape_updateContent( self, groups ):
+    def tape_updateContent( self, groups, session ):
         tape = Tape.createByName( groups[1] )
         if tape.isValid():
             tc = TapeContentUpdaterThread( groups[1] )
@@ -127,7 +128,7 @@ class LTOApi(tornado.web.RequestHandler):
             return RouteResult( 404, "tape-not-found", {} )
 
 
-    def getTapeList( self, groups ):
+    def getTapeList( self, groups, session ):
         tapes = TapeCollection()
         tapelist = []
         for tape in tapes:
