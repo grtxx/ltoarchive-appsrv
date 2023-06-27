@@ -35,6 +35,14 @@ class Tape(BaseEntity):
         return os.path.join( variables.LTFSRoot, self.label )
 
 
+    def drop( self ):
+        if ( self.isValid() ):
+            db = variables.getScopedDb()
+            print( "Dropping tape..." )
+            db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
+            db.cmd( "DELETE FROM tapes WHERE id=%s", [ self.id() ] )
+
+
     def updateContent( self ):
         cartRoot = os.listdir( self.getRoot() )
         domains = []

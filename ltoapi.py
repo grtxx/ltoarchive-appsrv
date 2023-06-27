@@ -35,6 +35,7 @@ class LTOApi(tornado.web.RequestHandler):
             { "method": "get",    "auth": False, "target": self.getTapeList,          "pattern": r"^tape/list$" },
 
             { "method": "put",    "auth": True,  "target": self.tape_new,             "pattern": r"^tape/new$" },
+            { "method": "delete", "auth": True,  "target": self.tape_drop,            "pattern": r"^tape/([^/]+)/drop$" },
             { "method": "patch",  "auth": True,  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
         ]
         for s in self._services:
@@ -107,7 +108,7 @@ class LTOApi(tornado.web.RequestHandler):
         self.set_header( "Content-Type", "application/json" )
 
 
-    def tape_new( self, groups ):
+    def tape_new( self, groups, session ):
         #try:
             args = json.loads( self.request.body )
             tape = Tape.createByName( args['label'] )
@@ -128,6 +129,15 @@ class LTOApi(tornado.web.RequestHandler):
             return RouteResult( 404, "tape-not-found", {} )
 
 
+    def tape_drop( self, groups, session ):
+        tape = Tape.createByName( groups[1] )
+        if tape.isValid():
+            tape.drop()
+            return RouteResult( 200, "ok", {} )
+        else:
+            return RouteResult( 404, "tape-not-found", {} )
+
+
     def getTapeList( self, groups, session ):
         tapes = TapeCollection()
         tapelist = []
@@ -136,7 +146,7 @@ class LTOApi(tornado.web.RequestHandler):
         return RouteResult( 200, "ok", tapelist )
 
 
-    def getFolder( self, groups ):
+    def getFolder( self, groups, session ):
         arcdomain = groups.group(1)
         path = groups.group(2)
         print( "Archdomain: %s, Folder: %s" % ( arcdomain, path ) )
