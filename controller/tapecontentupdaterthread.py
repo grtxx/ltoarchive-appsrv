@@ -4,8 +4,6 @@ from model.tape import Tape
 
 class TapeContentUpdaterThread( threading.Thread ):
 
-    tapeName = ""
-
     def __init__( self, tapeName ):
         threading.Thread.__init__( self )
         self.name = "tapeContentUpdater"

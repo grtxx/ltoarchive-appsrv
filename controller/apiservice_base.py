@@ -1,6 +1,8 @@
 
 class ApiService_base:
-    _apiServer: None
+
+    def __init__( self ):
+        self._apiServer = None
 
     def getRoutes():
         return []

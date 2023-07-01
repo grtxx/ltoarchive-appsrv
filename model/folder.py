@@ -4,13 +4,19 @@ from model.baseentity import BaseEntity
 class Folder(BaseEntity):
     _tablename = variables.TablePrefix + 'folders'
     _fields = [ 'domainId', 'name', 'size', 'created', 'isDeleted', 'parentFolderId' ]
-    _fullpath = "."
+
+
+    def __init__( self, id = 0 ):
+        super().__init__( id )
+        self._fullpath = "."
 
 
     def __setattr__( self, name, value ):
         if ( name == "parentFolder" ):
             if value == None:
                 self.parentFolderId = None
+            elif not isinstance( value, Folder ):
+                self.parentFolderId = int( value )
             else:
                 self.parentFolderId = value.id()
         else:

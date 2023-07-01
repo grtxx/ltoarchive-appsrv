@@ -4,10 +4,14 @@ from model.baseentity import BaseEntity
 
 class BaseCollection:
     _itemClass = BaseEntity
-    _ids = []
-    _filters = {}
-    _loaded = False
-    _iterCursor = 0
+
+
+    def __init__( self ):
+        super().__init__()
+        self._ids = []
+        self._filters = {}
+        self._loaded = False
+        self._iterCursor = 0
 
 
     def __iter__( self ):
@@ -36,9 +40,10 @@ class BaseCollection:
         for k in self._filters:
             cond = self.sqlCondition( k, self._filters[k] )
             #cond["sql"] = cond["sql"].replace( "%", "%%" )
-            sqls.append( cond["sql"] )
-            for k in cond["vars"]:
-                vars.append( k )
+            if ( cond != None ):
+                sqls.append( cond["sql"] )
+                for k in cond["vars"]:
+                    vars.append( k )
         return { "sql": sqls, "vars": vars, "wherecondition": "(" + ") AND (".join( sqls ) + ")" }
     
 

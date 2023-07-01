@@ -5,8 +5,8 @@ import json
 import datetime
 import time
 from model.tape import Tape
-from model.tapecollection import TapeCollection
 from model.routeresult import RouteResult
+from model.tapecollection import TapeCollection
 from model.session import Session
 from controller.tapecontentupdaterthread import TapeContentUpdaterThread
 from controller.apiservice_project import ApiService_project
