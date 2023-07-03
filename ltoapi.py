@@ -15,11 +15,12 @@ from controller.apiservice_domain import ApiService_domain
 
 
 class LTOApi(tornado.web.RequestHandler):
-    _services = []
-    _sessions = {}
-    _lastSessionCleanup = 0
+
 
     def initialize( self ):
+        self._services = []
+        self._sessions = {}
+        self._lastSessionCleanup = 0
         self.addService( ApiService_domain() )
         self.addService( ApiService_project() )
         self.addService( ApiService_user() )
@@ -57,7 +58,7 @@ class LTOApi(tornado.web.RequestHandler):
         if ( r["auth"] == None or r["auth"] == False ):
             return None
         sessionId = self.request.headers.get( "X-SessionId")
-        accessToken = self.request.headers.get( "X-AcccessToken")
+        accessToken = self.request.headers.get( "X-AccessToken")
         queryGuid = self.request.headers.get( "X-QueryGuid")
         signature = self.request.headers.get( "X-Signature")
         self.sessionCleanup()
@@ -68,7 +69,7 @@ class LTOApi(tornado.web.RequestHandler):
             else:
                 session = Session.createByToken( sessionId )
         if accessToken != None:
-            if ( self._sessions[ accessToken ] ):
+            if ( accessToken in self._sessions ):
                 session = self._sessions[ accessToken ]
                 if not session.auth( queryGuid, signature ):
                     session = None
@@ -81,7 +82,7 @@ class LTOApi(tornado.web.RequestHandler):
 
     def executeRoute( self, r, groups ):
         session = self.auth( r )
-        if ( r["auth"]==False or session!=None ):
+        if ( r["auth"]==False or session.userId != None ):
             res = r["target"]( groups, session )
         else:
             res = RouteResult( 500, "query-not-authenticated", {} )

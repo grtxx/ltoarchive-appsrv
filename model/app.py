@@ -10,6 +10,30 @@ class App(BaseEntity):
         
 
     @staticmethod
+    def createByAccessToken( token ):
+        db = variables.getScopedDb()
+        cur = db.cursor()
+        cur.execute( "SELECT appId FROM %sappTokens WHERE token=%%s" % ( variables.TablePrefix, ), ( token, ) )
+        id = cur.fetchOneDict()
+        if ( id == None ):
+            return None
+        else:
+            return App( id["appId"] )
+
+
+    @staticmethod
+    def getUserIdForAccessToken( token ):
+        db = variables.getScopedDb()
+        cur = db.cursor()
+        cur.execute( "SELECT userId FROM %sappTokens WHERE token=%%s" % ( variables.TablePrefix, ), ( token, ) )
+        id = cur.fetchOneDict()
+        if ( id == None ):
+            return None
+        else:
+            return id["userId"]
+
+
+    @staticmethod
     def createByToken( token ):
         db = variables.getScopedDb()
         cur = db.cursor()

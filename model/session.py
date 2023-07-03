@@ -27,24 +27,31 @@ class Session(BaseEntity):
         return s
 
 
-    def getAppByToken( token ):
-        return App.createByToken( token )
+    def __init__( self ):
+        super().__init__()
+        self.sessionId = ""
+
+
+    def getAppByToken( self, token ):
+        return App.createByAccessToken( token )
 
 
     def auth( self, queryGuid, signature ):
         app = self.getAppByToken( self.sessionId )
         if app:
             sha = hashlib.sha1()
-            sha.update( ( '%s--%s--%s' % ( self.sessionId, queryGuid, app.appSecret ) ).encode('ascii') )
+            sha.update( ( '%s--%s' % ( queryGuid, app.appSecret.decode('UTF-8') ) ).encode('ascii') )
             calculatedSignature = base64.b64encode( sha.digest() ).decode( 'ascii' ) 
+            print( calculatedSignature )
             if signature == calculatedSignature:
+                self.userId = App.getUserIdForAccessToken( self.sessionId )
                 return True
         return False
 
 
     def getDefaultData( self ):
         dt = super().getDefaultData()
-        dt["sessionId"] = uuid.v4
+        dt["sessionId"] = uuid.uuid4()
         dt["lastseen"] = datetime.time()
         dt["userId"] = None
         return dt

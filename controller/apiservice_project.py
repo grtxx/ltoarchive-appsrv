@@ -8,12 +8,12 @@ class ApiService_project( ApiService_base ):
 
     def getRoutes( self ):
         routes = [
-            { "method": "get",    "target": self.projectInfo,           "pattern": r"^domain/([^/]+)/([^/]+)/getinfo$" }
+            { "method": "get",   "auth": True,  "target": self.projectInfo,           "pattern": r"^domain/([^/]+)/([^/]+)/getinfo$" }
         ]
         return routes
 
 
-    def projectInfo( self, groups ):
+    def projectInfo( self, groups, session ):
         d = Domain.createByName( groups[1] )
         f = Folder.createByCodeAndDomain( groups[2], d )
         if f.isValid():
