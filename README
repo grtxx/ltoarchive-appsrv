@@ -1,0 +1,18 @@
+Hi,
+
+
+this will be a virtual archive filesystem for IBM Spectrum Archive LE. 
+Spectrum Archive LE is a free product but there are lot's of limitations. With this program, you 
+will be able to eliminate volser folders and you can create as many different "archive domains"
+as you want. Each archive domain is a virtual filesystem and each archive domain can have 
+it's own duplication policy.
+
+Currently the system is in development stage: for now, you have to copy the files to the tapes
+manually but after that, the system can go through the tapes and create virtual filesystem 
+entries into a MySQL/MariaDB database.
+
+Planned parts:
+- Appserver - this repo
+- Node.js / Vue webpage with authentication
+- CLI
+- Fuse FS
