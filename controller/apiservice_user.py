@@ -1,6 +1,4 @@
 from controller.apiservice_base import ApiService_base
-from model.folder import Folder
-from model.domain import Domain
 from model.routeresult import RouteResult
 
 

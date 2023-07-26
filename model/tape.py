@@ -11,6 +11,11 @@ class Tape(BaseEntity):
     _tablename = variables.TablePrefix + 'tapes'
     _fields = [ 'label', 'copyNumber', 'isAvailable', 'isActive', 'created' ]
 
+
+    def __init__( self, id = 0 ):
+        super().__init__( id )
+        
+
     @staticmethod
     def createByName( name ):
         db = variables.getScopedDb()

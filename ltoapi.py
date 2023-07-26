@@ -2,16 +2,13 @@
 import tornado.web
 import re
 import json
-import datetime
 import time
-from model.tape import Tape
 from model.routeresult import RouteResult
-from model.tapecollection import TapeCollection
 from model.session import Session
-from controller.tapecontentupdaterthread import TapeContentUpdaterThread
 from controller.apiservice_project import ApiService_project
 from controller.apiservice_user import ApiService_user
 from controller.apiservice_domain import ApiService_domain
+from controller.apiservice_tape import ApiService_tape
 
 
 class LTOApi(tornado.web.RequestHandler):
@@ -24,6 +21,7 @@ class LTOApi(tornado.web.RequestHandler):
         self.addService( ApiService_domain() )
         self.addService( ApiService_project() )
         self.addService( ApiService_user() )
+        self.addService( ApiService_tape() )
 
 
     def addService( self, srvObj ):
@@ -33,11 +31,6 @@ class LTOApi(tornado.web.RequestHandler):
     def routes( self ):
         routes = [
             { "method": "get",    "auth": False, "target": self.getFolder,            "pattern": r"^content/([^/]+)/getfolder(/.*)" },
-            { "method": "get",    "auth": False, "target": self.getTapeList,          "pattern": r"^tape/list$" },
-
-            { "method": "put",    "auth": True,  "target": self.tape_new,             "pattern": r"^tape/new$" },
-            { "method": "delete", "auth": True,  "target": self.tape_drop,            "pattern": r"^tape/([^/]+)/drop$" },
-            { "method": "patch",  "auth": True,  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
         ]
         for s in self._services:
             sroutes = s.getRoutes()
@@ -109,50 +102,11 @@ class LTOApi(tornado.web.RequestHandler):
         self.set_header( "Content-Type", "application/json" )
 
 
-    def tape_new( self, groups, session ):
-        #try:
-            args = json.loads( self.request.body )
-            tape = Tape.createByName( args['label'] )
-            tape.set( 'copyNumber', args['copyNumber'] )
-            tape.set( 'isActive', 1 )
-            tape.save()
-            return RouteResult( 202, "tape-updated", {} )
-        #except Exception as e:
-        #    return RouteResult( 500, "server-error: %s" % str(e), str(e) )
-        
-
-    def tape_updateContent( self, groups, session ):
-        tape = Tape.createByName( groups[1] )
-        if tape.isValid():
-            tc = TapeContentUpdaterThread( groups[1] )
-            return RouteResult( 200, "queued", {} )
-        else:
-            return RouteResult( 404, "tape-not-found", {} )
-
-
-    def tape_drop( self, groups, session ):
-        tape = Tape.createByName( groups[1] )
-        if tape.isValid():
-            tape.drop()
-            return RouteResult( 200, "ok", {} )
-        else:
-            return RouteResult( 404, "tape-not-found", {} )
-
-
-    def getTapeList( self, groups, session ):
-        tapes = TapeCollection()
-        tapelist = []
-        for tape in tapes:
-            tapelist.append( { "id": tape.id(), "label": tape.get("label"), 'isAvailable': tape.get("isAvailable"), 'copyNumber': tape.get("copyNumber") } )
-        return RouteResult( 200, "ok", tapelist )
-
-
     def getFolder( self, groups, session ):
         arcdomain = groups.group(1)
         path = groups.group(2)
         print( "Archdomain: %s, Folder: %s" % ( arcdomain, path ) )
         return RouteResult( 200, "ok", arcdomain )
-
 
 
     def set_default_headers(self) -> None:

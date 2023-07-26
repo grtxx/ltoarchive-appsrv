@@ -8,7 +8,7 @@ import datetime
 
 class File(BaseEntity):
     _tablename = variables.TablePrefix + 'files'
-    _fields = ( 'domainId', 'folderId', 'name', 'ext', 'hash', 'size', 'created', 'isOnline', 'isDeleted' )
+    _fields = [ 'domainId', 'folderId', 'name', 'ext', 'hash', 'size', 'created', 'isOnline', 'isDeleted' ]
         
 
     def __setattr__( self, name, value ):

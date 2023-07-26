@@ -5,7 +5,7 @@ from model.baseentity import BaseEntity
 
 class User(BaseEntity):
     _tablename = variables.TablePrefix + 'users'
-    _fields = ( 'username', 'fullname', 'pwhash', 'origin' )
+    _fields = [ 'username', 'fullname', 'pwhash', 'origin' ]
         
     
     def getDefaultData( self ):

@@ -8,7 +8,7 @@ class BaseEntity():
     _idField = "id"
 
     def __init__( self, id=0 ):
-        self._fields = ()
+        #self._fields = ()
         self._cached = False
         self._data = {}
         self._dataInDb = {}

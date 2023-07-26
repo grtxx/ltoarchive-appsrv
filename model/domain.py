@@ -8,10 +8,10 @@ from model.baseentity import BaseEntity
 class Domain(BaseEntity):
     _tablename = variables.TablePrefix + 'domains'
     _fields = ( 'name' )
-
+    
     def __init__( self, id = 0 ):
         super().__init__( id )
-
+        
 
     @staticmethod
     def createByName( name ):
