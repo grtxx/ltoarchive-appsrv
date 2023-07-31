@@ -49,18 +49,22 @@ class Tape(BaseEntity):
 
 
     def updateContent( self ):
-        cartRoot = os.listdir( self.getRoot() )
-        domains = []
-        for d in cartRoot:
-            if ( os.path.isdir( os.path.join( self.getRoot(), d ) ) ):
-                domains.append( d )
-        for d in domains:
-            self.updateDomainContent( d )
+        try:
+            cartRoot = os.listdir( self.getRoot() )
+            domains = []
+            for d in cartRoot:
+                if ( os.path.isdir( os.path.join( self.getRoot(), d ) ) ):
+                    domains.append( d )
+            for d in domains:
+                self.updateDomainContent( d )
+        except:
+            pass
 
 
     def updateDomainContent( self, d ):
         domain = Domain.createByName( d )
         domain.dropTape( self )
+        domain.save()
         root = os.path.join( self.getRoot(), d )
         stack = [ "" ]
         topfolders = []

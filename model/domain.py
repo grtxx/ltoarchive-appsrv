@@ -7,11 +7,8 @@ from model.baseentity import BaseEntity
 
 class Domain(BaseEntity):
     _tablename = variables.TablePrefix + 'domains'
-    _fields = ( 'name' )
-    
-    def __init__( self, id = 0 ):
-        super().__init__( id )
-        
+    _fields = [ 'name' ]
+            
 
     @staticmethod
     def createByName( name ):
@@ -21,7 +18,7 @@ class Domain(BaseEntity):
         id = cur.fetchOneDict()
         if ( id == None ):
             tp = Domain()
-            tp.set( 'label', name )
+            tp.set( 'name', name )
             return tp
         else:
             return Domain( id["id"] )
