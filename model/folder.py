@@ -87,6 +87,18 @@ class Folder(BaseEntity):
         return f
     
 
+    def addTape( self, tape ):
+        db = variables.getScopedDb()
+        cur = db.cursor()
+        cur.execute( "SELECT count(*) as cnt FROM %stapefolders WHERE folderId=%%s AND tapeId=%%s" % (variables.TablePrefix, ), ( self.id(), tape.id() ) )
+        cnt = cur.fetchOneDict()
+        cur.reset()
+        if ( cnt['cnt'] == 0 ):
+            cur = db.cursor()
+            cur.execute( "INSERT INTO %stapefolders SET folderId=%%s, tapeId=%%s" % (variables.TablePrefix, ), ( self.id(), tape.id() ) )
+            cur.reset()
+        
+
     def getFullPath( self ):
         if ( self._fullPath == "." ):
             path = self.name

@@ -9,10 +9,23 @@ class ApiService_domain( ApiService_base ):
     def getRoutes( self ):
         routes = [
             { "method": "get",    "auth": False, "target": self.getDomainList,        "pattern": r"^domain/list$" },
+            { "method": "get",    "auth": True,  "target": self.getFolderContents,    "pattern": r"^domain/(.+)/content/(\d+)$" },
             { "method": "delete", "auth": False, "target": self.dropDomain,           "pattern": r"^domain/(.+)$" },
             { "method": "put",    "auth": True,  "target": self.putDomain,            "pattern": r"^domain/new$" },
         ]
         return routes
+
+
+    def getFolderContents( self, groups, session ):
+        dom = Domain.createByName( groups[1] )
+        folder = dom.getFolder( folderId=groups[2] )
+        if ( folder.isValid() ):
+            contents = []
+            contents.append( folder.getSubFolders().getData() )
+            contents.append( folder.getFiles().getData() )
+            return RouteResult( 200, "ok", contents );
+        else:
+            return RouteResult( 404, "not-found", {} );
 
 
     def getDomainList( self, groups, session ):

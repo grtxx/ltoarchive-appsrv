@@ -45,7 +45,11 @@ class Tape(BaseEntity):
             db = variables.getScopedDb()
             print( "Dropping tape..." )
             db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
+            db.cmd( "DELETE FROM tapefolders WHERE tapeId=%s", [ self.id() ] )
+            db.cmd( "DELETE FROM files WHERE (SELECT count(*) FROM tapeitems WHERE hash=files.hash AND folderId=files.parentFolderId)=0" )
+
             db.cmd( "DELETE FROM tapes WHERE id=%s", [ self.id() ] )
+
 
 
     def updateContent( self ):
@@ -57,8 +61,8 @@ class Tape(BaseEntity):
                     domains.append( d )
             for d in domains:
                 self.updateDomainContent( d )
-        except:
-            pass
+        except Exception as err:
+            print( "ERROR: %s" % err )
 
 
     def updateDomainContent( self, d ):
@@ -101,6 +105,7 @@ class Tape(BaseEntity):
                     pass
                 else:
                     folder = Folder.createByNameParentAndDomain( f, afolder, domain )
+                    folder.addTape( self )
                     if not folder.isValid():
                         folder.created = datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
                         folder.save()
