@@ -10,7 +10,12 @@ class FileCollection(BaseCollection):
         if name == "name":
             return { "sql": "files.name=%s", "vars": [ value ] }
         elif name == "parentFolderId":
-            return { "sql": "files.parentFolderId=%s", "vars": [ value ] }
+            if value != None and value != 0:
+                return {  "sql": "files.parentFolderId=%s", "vars": [ value ] }
+            else:
+                return {  "sql": "ISNULL(files.parentFolderId)", "vars": [] }
+        elif name == "domainId":
+            return {  "sql": "files.domainId=%s", "vars": [ value ] }
         pass
 
 

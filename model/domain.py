@@ -8,6 +8,7 @@ from model.baseentity import BaseEntity
 class Domain(BaseEntity):
     _tablename = variables.TablePrefix + 'domains'
     _fields = [ 'name' ]
+    _orderField = 'name'
             
 
     @staticmethod
@@ -27,10 +28,19 @@ class Domain(BaseEntity):
 
     def addFolder( self, path ):
         return Folder.createByPathAndDomain( path, self )
-    
+   
 
-    def getFolder( self, path ):
-        return Folder.createByPathAndDomain( path, self )
+    def getFolder( self, path="--", folderId=-1 ):
+        if ( path != "--" ):
+            return Folder.createByPathAndDomain( path, self )
+        elif( folderId != -1 ):
+            f = Folder( folderId )
+            if ( f.getDomain()._id == self._id ):
+                return f
+            else:
+                f = Folder()
+                f.domainId = self._id
+                return f
 
 
     def addFileRecord( self, parentFolder, name, tape, hash ):

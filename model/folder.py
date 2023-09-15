@@ -116,13 +116,19 @@ class Folder(BaseEntity):
         from model.foldercollection import FolderCollection
         coll = FolderCollection()
         coll.setFilter( 'parentFolderId', self.id() )
+        coll.setFilter( 'domainId', self.domainId )
         return coll
 
+
+    def getDomain( self ):
+        from model.domain import Domain
+        return Domain( self.domainId )
 
     def getFiles( self ):
         from model.filecollection import FileCollection
         coll = FileCollection()
         coll.setFilter( 'parentFolderId', self.id() )
+        coll.setFilter( 'domainId', self.domainId )
         return coll
     
 

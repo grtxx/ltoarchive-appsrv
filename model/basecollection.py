@@ -59,7 +59,7 @@ class BaseCollection:
             db = model.variables.getScopedDb()
             cur = db.cursor()
             sqlcond = self.buildFilterSql()
-            sql = "SELECT `%s` FROM `%s` WHERE %s ORDER BY %s" % ( ditem._idField, ditem._tablename, sqlcond["wherecondition"], ditem._idField )            
+            sql = "SELECT `%s` FROM `%s` WHERE %s ORDER BY %s" % ( ditem._idField, ditem._tablename, sqlcond["wherecondition"], ditem._orderField + ", " + ditem._idField )            
             cur.execute( sql, sqlcond["vars"] )
             self._ids = []
             item = cur.fetchOneDict()
@@ -68,3 +68,9 @@ class BaseCollection:
                 item = cur.fetchOneDict()
             self._loaded = True
 
+
+    def getData( self ):
+        dt = []
+        for item in self:
+            dt.append( item.getData() )
+        return dt

@@ -6,6 +6,7 @@ import copy
 class BaseEntity():
     _tablename = variables.TablePrefix + 'tapes'
     _idField = "id"
+    _orderField = "id"
 
     def __init__( self, id=0 ):
         #self._fields = ()

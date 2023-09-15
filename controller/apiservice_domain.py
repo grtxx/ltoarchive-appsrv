@@ -19,7 +19,7 @@ class ApiService_domain( ApiService_base ):
     def getFolderContents( self, groups, session ):
         dom = Domain.createByName( groups[1] )
         folder = dom.getFolder( folderId=groups[2] )
-        if ( folder.isValid() ):
+        if ( folder.isValid() or folder._id == 0 ):
             contents = []
             contents.append( folder.getSubFolders().getData() )
             contents.append( folder.getFiles().getData() )
