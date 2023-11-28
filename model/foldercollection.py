@@ -3,7 +3,7 @@ from model.basecollection import BaseCollection
 
 
 class FolderCollection(BaseCollection):
-    _itemClass = Folder
+    _itemClass = Folder  
 
     def sqlCondition( self, name, value ):
         if name == "name":

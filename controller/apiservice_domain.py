@@ -21,8 +21,10 @@ class ApiService_domain( ApiService_base ):
         folder = dom.getFolder( folderId=groups[2] )
         if ( folder.isValid() or folder._id == 0 ):
             contents = []
-            contents.append( folder.getSubFolders().getData() )
-            contents.append( folder.getFiles().getData() )
+            for f in folder.getSubFolders().getData():
+                contents.append( { 'type': 'folder', 'data': f } )
+            for f in folder.getFiles().getData( flags='wtapeinfo' ):
+                contents.append( { 'type': 'file', 'data': f } )
             return RouteResult( 200, "ok", contents );
         else:
             return RouteResult( 404, "not-found", {} );

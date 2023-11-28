@@ -3,12 +3,14 @@ import tornado.web
 import re
 import json
 import time
+import model.variables as variables
 from model.routeresult import RouteResult
 from model.session import Session
 from controller.apiservice_project import ApiService_project
 from controller.apiservice_user import ApiService_user
 from controller.apiservice_domain import ApiService_domain
 from controller.apiservice_tape import ApiService_tape
+from controller.apiservice_job import ApiService_job
 
 
 class LTOApi(tornado.web.RequestHandler):
@@ -22,6 +24,7 @@ class LTOApi(tornado.web.RequestHandler):
         self.addService( ApiService_project() )
         self.addService( ApiService_user() )
         self.addService( ApiService_tape() )
+        self.addService( ApiService_job() )
 
 
     def addService( self, srvObj ):
@@ -76,10 +79,13 @@ class LTOApi(tornado.web.RequestHandler):
     def executeRoute( self, r, groups ):
         session = self.auth( r )
         if ( r["auth"]==False or session.userId != None ):
+            db = variables.getScopedDb()
+            db.commit()
             res = r["target"]( groups, session )
         else:
             res = RouteResult( 500, "query-not-authenticated", {} )
         self.output( res )
+
 
     def route( self, uri ):
         routeSucceeded = False

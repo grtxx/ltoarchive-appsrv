@@ -69,8 +69,8 @@ class BaseCollection:
             self._loaded = True
 
 
-    def getData( self ):
+    def getData( self, flags="" ):
         dt = []
         for item in self:
-            dt.append( item.getData() )
+            dt.append( item.getData( flags ) )
         return dt

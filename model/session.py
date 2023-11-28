@@ -42,7 +42,6 @@ class Session(BaseEntity):
             sha = hashlib.sha1()
             sha.update( ( '%s--%s' % ( queryGuid, app.appSecret.decode('UTF-8') ) ).encode('ascii') )
             calculatedSignature = base64.b64encode( sha.digest() ).decode( 'ascii' ) 
-            print( calculatedSignature )
             if signature == calculatedSignature:
                 self.userId = App.getUserIdForAccessToken( self.sessionId )
                 return True

@@ -4,6 +4,7 @@ from model.baseentity import BaseEntity
 class Folder(BaseEntity):
     _tablename = variables.TablePrefix + 'folders'
     _fields = [ 'domainId', 'name', 'size', 'created', 'isDeleted', 'parentFolderId' ]
+    _orderField = "name"  
 
 
     def __init__( self, id = 0 ):

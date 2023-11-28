@@ -123,6 +123,6 @@ class BaseEntity():
             db.commit()
 
 
-    def getData( self ):
+    def getData( self, flags="" ):
         self.cacheIf()
         return self._data

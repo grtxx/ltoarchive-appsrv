@@ -9,7 +9,6 @@ import datetime
 class File(BaseEntity):
     _tablename = variables.TablePrefix + 'files'
     _fields = [ 'domainId', 'folderId', 'name', 'ext', 'hash', 'size', 'created', 'isOnline', 'isDeleted' ]
-        
 
     def __setattr__( self, name, value ):
         if ( name == "parentFolder" ):
@@ -47,6 +46,25 @@ class File(BaseEntity):
             return self.parentFolder.getFullPath() + "/" + self.name
         else:
             return self.name
+        
+
+    def getTapeInfo( self ):
+        db = variables.getScopedDb()
+        cur = db.cursor( dictionary=True)
+        cur.execute( ("SELECT tapeId, tapes.label, startblock FROM %stapeitems " +
+                     "INNER JOIN %stapes ON (tapes.id=tapeId) WHERE hash=%%s AND domainId=%%s AND folderId=%%s ORDER BY copyNumber") % (variables.TablePrefix, variables.TablePrefix, ), (self.hash, self.domainId, self.parentFolderId ) )
+        ti = cur.fetchall()
+        return ti
+
+    def getData( self, flags="" ):
+        dt = super().getData( flags )
+        flags = flags.split(",")
+        try:
+            if ( flags.index( "wtapeinfo" ) >=0 ):
+                dt['tapes'] = self.getTapeInfo()
+        except:
+            pass
+        return dt
     
 
 def genHash( fspath ):
