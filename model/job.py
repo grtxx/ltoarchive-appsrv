@@ -1,11 +1,8 @@
 import model.variables as variables
-import os
 import datetime
-import xattr
 from model.baseentity import BaseEntity
-from model.domain import Domain
-from model.folder import Folder
-import model.file
+from model.file import File
+import json
 
 class Job(BaseEntity):
     _tablename = variables.TablePrefix + 'jobs'
@@ -26,4 +23,29 @@ class Job(BaseEntity):
         if ( self.isValid() ):
             db = variables.getScopedDb()
             db.cmd( "DELETE FROM jobs WHERE id=%s", [ self.id() ] )
+
+
+    def addFile( id, tapeId, dstpath ):
+        pass
+
+    def buildFilelist( self ):
+        if ( self.isValid() ):
+            db = variables.getScopedDb()
+            print( "dropping old jobfiles" )
+            db.cmd( "DELETE FROM jobfiles WHERE jobId=%s", [ self.id() ] )
+
+            src = json.loads( self.src )
+            print( src )
+
+            for sel in src['sel']:
+                type = sel['type']
+                if ( type == 'file' ):
+                    id = sel['data']['id']
+                    f = File( id )
+                    fps = f.getFirstUsableFileSysPathStruct()
+
+                    print( f.getStartBlock( fps['tape'] ) )
+                    print( fps )
+            pass
+
 

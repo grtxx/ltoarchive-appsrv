@@ -3,7 +3,6 @@ import os
 import datetime
 import xattr
 from model.baseentity import BaseEntity
-from model.domain import Domain
 from model.folder import Folder
 import model.file
 
@@ -66,6 +65,7 @@ class Tape(BaseEntity):
 
 
     def updateDomainContent( self, d ):
+        from model.domain import Domain
         domain = Domain.createByName( d )
         domain.dropTape( self )
         domain.save()

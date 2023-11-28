@@ -1,6 +1,7 @@
 import model.variables as variables
 from model.folder import Folder
 from model.baseentity import BaseEntity
+from model.tapecollection import TapeCollection
 import re
 import os
 import hashlib
@@ -18,6 +19,14 @@ class File(BaseEntity):
                 self.parentFolderId = value.id()
         else:
             super().__setattr__( name, value )
+
+
+    def __getattr__( self, name ):
+        if ( name == "parentFolder" ):
+            return self.localCacheGet( 'parentfolder', lambda x: Folder( self.parentFolderId ) )
+        else:
+            return super().__getattr__( name )
+
 
     @staticmethod
     def createFile( domain, parentFolder, name, hash):
@@ -41,6 +50,26 @@ class File(BaseEntity):
         return f
 
 
+    def getFirstUsableTape( self ):
+        return self.localCacheGet( 'firstusabletape', lambda x: self.getTapes().getFirstUsable() )
+
+
+    def getFirstUsableFileSysPathStruct( self ):
+        from model.domain import Domain
+        vfspath = self.getFullPath()
+        d = Domain( self.domainId )
+        t = self.getFirstUsableTape()
+        if ( t ):
+            return { 
+                'tape': t, 
+                'srcpath': "%s/%s/%s/%s" % ( variables.LTFSRoot, t.label, d.name, vfspath ),
+                'vfspath': vfspath 
+            }
+        else:
+            return None
+        pass
+
+
     def getFullPath( self ):
         if self.parentFolder:
             return self.parentFolder.getFullPath() + "/" + self.name
@@ -55,6 +84,24 @@ class File(BaseEntity):
                      "INNER JOIN %stapes ON (tapes.id=tapeId) WHERE hash=%%s AND domainId=%%s AND folderId=%%s ORDER BY copyNumber") % (variables.TablePrefix, variables.TablePrefix, ), (self.hash, self.domainId, self.parentFolderId ) )
         ti = cur.fetchall()
         return ti
+    
+
+    def getStartBlock( self, tape ):
+        db = variables.getScopedDb()
+        cur = db.cursor( dictionary=True)
+        cur.execute( ("SELECT IFNULL(startblock,-1) AS stb FROM %stapeitems WHERE hash=%%s AND domainId=%%s AND folderId=%%s AND tapeId=%%s LIMIT 1") % (variables.TablePrefix, ), (self.hash, self.domainId, self.parentFolderId, tape.id() ) )
+        ti = cur.fetchall()
+        return ti[0]['stb']
+    
+
+    def getTapes( self ):
+        def getTapesFromDb( self ):
+            tapes = TapeCollection()
+            tapes.setFilter( 'file', self )
+            return tapes
+        
+        return self.localCacheGet( 'tapes', getTapesFromDb )
+    
 
     def getData( self, flags="" ):
         dt = super().getData( flags )

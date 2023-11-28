@@ -101,7 +101,7 @@ class Folder(BaseEntity):
         
 
     def getFullPath( self ):
-        if ( self._fullPath == "." ):
+        if ( self._fullPath == "." or self._fullPath == None ):
             path = self.name
             pf = self
             while pf.isValid():

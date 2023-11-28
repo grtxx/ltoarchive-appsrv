@@ -2,6 +2,7 @@ from controller.apiservice_base import ApiService_base
 from model.job import Job
 from model.jobcollection import JobCollection
 from model.routeresult import RouteResult
+from controller.filelistbuilderthread import filelistBuilderThread
 import json
 
 
@@ -36,6 +37,7 @@ class ApiService_job( ApiService_base ):
             j.username = params['username']
             j.status='PENDING'
             j.save()
+            tc = filelistBuilderThread( j )
             return RouteResult( 200, "ok", {} )
         else:
             return RouteResult( 405, "invalid-data", {} )

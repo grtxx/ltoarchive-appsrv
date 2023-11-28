@@ -7,6 +7,7 @@ class BaseEntity():
     _tablename = variables.TablePrefix + 'tapes'
     _idField = "id"
     _orderField = "id"
+    _localCache = {}
 
     def __init__( self, id=0 ):
         #self._fields = ()
@@ -27,6 +28,13 @@ class BaseEntity():
     def isValid( self ) -> bool:
         self.cacheIf()
         return ( self.id() != None )
+    
+
+    def localCacheGet( self, name, callable ):
+        if name not in self._localCache:
+            self._localCache[ name ] = callable( self )
+        return self._localCache[ name ]
+
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name not in self._fields:
