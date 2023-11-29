@@ -25,9 +25,8 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
+    main()
 
     job = Job( 4 )
     print( job.getData() )
     job.buildFilelist()
-    
