@@ -54,6 +54,7 @@ class ApiService_job( ApiService_base ):
             j.dst = params['dststorage']
             j.email = params['email']
             j.username = params['username']
+            j.webhook = params['webhook']
             j.status='PENDING'
             j.save()
             tc = FilelistBuilderThread( j )

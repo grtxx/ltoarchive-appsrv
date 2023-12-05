@@ -25,9 +25,10 @@ class Job(BaseEntity):
                 if value=='RESTORED':
                     self.finished=datetime.datetime.now()
         super().__setattr__(name, value)
-        if name == 'status':
+        if name == 'status' and value == 'RESTORED':
             if ( self.webhook != None and self.webhook != "" ):
-                r = requests.post( self.webhook, data=json.dumps( self.getData() ) )
+                r = requests.post( self.webhook, data=json.dumps( self.getData(), default=str ) )
+                print( "Response:", r.content )
 
 
     def getDefaultData(self):
@@ -81,7 +82,8 @@ class Job(BaseEntity):
         if ( d['status'] == None ):
             d['status'] = 'PENDING'
         else:
-            d['status'] = "%s" % ( d['status'] ).decode( 'UTF-8' )
+            if isinstance( d['status'], bytearray ):
+                d['status'] = ( d['status'] ).decode()
         d['size'] = self.getSize()
         d['filecount'] = self.getFileCount()
         d['tapecount'] = self.getTapeCount()
@@ -116,18 +118,25 @@ class Job(BaseEntity):
         if ( self.isValid() and f != None ):
             db = variables.getScopedDb()
             fsp = f.getFirstUsableFileSysPathStruct()
-            db.cmd( "INSERT INTO jobfiles (jobId, tapeId, fileId, srcpath, dstpath, startblock, size, status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-                (
-                    self.id(), 
-                    fsp['tape'].id(), 
-                    f.id(), 
-                    fsp['srcpath'], 
-                    "%s/%s/%s" % ( dstconfig['localpath'], self.username, fsp['vfspath'] ), 
-                    f.getStartBlock( fsp['tape'] ), 
-                    f.size,
-                    'WAITING',
-                ) 
-            )
+            if fsp != None:
+                db.cmd( "INSERT INTO jobfiles (jobId, tapeId, fileId, srcpath, dstpath, dstfs, startblock, size, status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (
+                        self.id(), 
+                        fsp['tape'].id(), 
+                        f.id(), 
+                        fsp['srcpath'], 
+                        "%s/%s/%s" % ( dstconfig['localpath'], self.username, fsp['vfspath'] ), 
+                        dstconfig['localpath'],
+                        f.getStartBlock( fsp['tape'] ), 
+                        f.size,
+                        'WAITING',
+                    ) 
+                )
+                return True
+            else:
+                self.status = "TAPE-INACCESSIBLE"
+                self.save()
+                return False
         else:
             raise Exception( "Cannot add file, job is not valid" )
 
@@ -165,10 +174,12 @@ class Job(BaseEntity):
 
             self.clearFiles()
             dstconfig = variables.getDestinationConfig( self.dststorage )
+            ok = True
             for f in filelist:
-                self.addFile( f, dstconfig )
-            self.status = "WAITING"
-            self.save()
+                ok = ok and self.addFile( f, dstconfig )
+            if ok:
+                self.status = "WAITING"
+                self.save()
 
 
     @staticmethod
@@ -178,7 +189,7 @@ class Job(BaseEntity):
         cur.execute( "SELECT * FROM jobfiles WHERE tapeId=%s AND status IN ('WAITING','COPY') ORDER BY jobId, startblock LIMIT 1", ( tape.id(), ) )
         return cur.fetchOneDict()
 
-    
+
     @staticmethod
     def updateJFStatus( jf, status ):
         db = variables.getScopedDb()

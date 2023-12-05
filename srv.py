@@ -6,7 +6,7 @@ import tornado.ioloop
 from tornado.web import Application
 from tornado.web import StaticFileHandler
 from ltoapi import LTOApi
-
+import requests
 
 def main():
     app = Application(
@@ -23,3 +23,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    #from model.job import Job
+    #job = Job(43)
+    #job.status = 'WAITING'
+    #job.status = 'RESTORED'
+    #print("OK");

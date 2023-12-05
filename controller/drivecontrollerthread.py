@@ -3,6 +3,7 @@ import subprocess
 from model.tapecollection import TapeCollection
 from model.basethread import BaseThread
 from model.job import Job
+import shutil
 
 class DriveControllerThread( BaseThread ):
 
@@ -28,15 +29,29 @@ class DriveControllerThread( BaseThread ):
             else:
                 jf = Job.getNextFileForTape( self.currentTape )
                 if jf != None:
-                    print( "                        "*self.getInstanceId(), str(jf['tapeId'])+": "+str(jf['startblock']) )
-                    Job.copyJF( jf )
-                    idleTimer = 0
+                    try:
+                        total, used, free = shutil.disk_usage( jf['dstfs'] )
+                    except:
+                        free = 10 * (2**30)
+                    if ( free < 700 * (2**30) ):
+                        job = Job( jf['jobId'] )
+                        job.status = "FREESPACE-STOP"
+                        job.save()
+                        print( " "*25*self.getInstanceId(), "FREESPACE-STOP" )
+                        time.sleep(30)
+                    else:
+                        print( " "*25*self.getInstanceId(), str(jf['tapeId'])+": "+str(jf['startblock']) )
+                        Job.copyJF( jf )
+                        idleTimer = 0
+
                 else:
                     time.sleep(1)
                     idleTimer = idleTimer + 1
-                    if idleTimer == 120: 
+                    if idleTimer == 240 or TapeCollection.isThereJobForUnlockedTapes(): 
+                        print( " "*25*self.getInstanceId(), "EJECT:" + self.currentTape.label )
                         subprocess.Popen( [ "leadm", "tape", "move", "-L", "homeslot", self.currentTape.label ] ).wait()
                         TapeCollection.releaseTape( self.getInstanceId() )
+                        print( " "*25*self.getInstanceId(), "TAPE UNLOCK:" + self.currentTape.label )
                         self.currentTape = None
                     
 

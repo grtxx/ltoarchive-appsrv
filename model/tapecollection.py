@@ -14,7 +14,10 @@ class TapeCollection(BaseCollection):
     def isThereJobForUnlockedTapes():
         db = variables.getScopedDb()
         db.commit()
-        
+        cur = db.cursor()
+        cur.execute( "SELECT count(*) AS c FROM `%stapes` WHERE ISNULL(lockedBy) AND id IN (SELECT DISTINCT tapeId FROM jobfiles WHERE status='WAITING')" % ( variables.TablePrefix ) )
+        return (cur.fetchOneDict())['c'] > 0
+
 
     @staticmethod
     def lockTape( instanceId ):
