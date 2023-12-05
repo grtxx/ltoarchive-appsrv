@@ -1,14 +1,14 @@
 import threading
 import model.variables as variables
 from model.tape import Tape
+from model.basethread import BaseThread
 
-class TapeContentUpdaterThread( threading.Thread ):
+class TapeContentUpdaterThread( BaseThread ):
 
     def __init__( self, tapeName ):
-        threading.Thread.__init__( self )
-        self.name = "tapeContentUpdater"
+        BaseThread.__init__( self, 'tapecontentupdater' )
         self.tapeName = tapeName
-        variables.Threads.add( self, 'update-tape-content' )
+
     
     def run( self ):
         tape = Tape.createByName( self.tapeName )

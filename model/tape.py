@@ -8,7 +8,7 @@ import model.file
 
 class Tape(BaseEntity):
     _tablename = variables.TablePrefix + 'tapes'
-    _fields = [ 'label', 'copyNumber', 'isAvailable', 'isActive', 'created' ]
+    _fields = [ 'label', 'copyNumber', 'isAvailable', 'isActive', 'created', 'lockedBy' ]
 
 
     def __init__( self, id = 0 ):
@@ -24,6 +24,19 @@ class Tape(BaseEntity):
         if ( id == None ):
             tp = Tape()
             tp.set( 'label', name )
+            return tp
+        else:
+            return Tape( id["id"] )
+
+
+    @staticmethod
+    def createByInstanceId( instanceId ):
+        db = variables.getScopedDb()
+        cur = db.cursor()
+        cur.execute( "SELECT id FROM `%stapes` WHERE lockedBy=%%s" % ( variables.TablePrefix ), ( instanceId, ) )
+        id = cur.fetchOneDict()
+        if ( id == None ):
+            tp = Tape()
             return tp
         else:
             return Tape( id["id"] )

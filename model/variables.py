@@ -55,12 +55,47 @@ def dropScopedDb():
         sessionMap[tid].close()
         del sessionMap[tid]
 
+def getDestinationConfig( name ):
+    if ( name in destinations ):
+        return destinations[ name ]
+    else:
+        return destinations[ list(destinations.keys())[0] ]
 
- 
+
+
 TablePrefix = ""
+components = { 
+    'drive-controller': {
+        'max': 2,
+        'autocreate': True,
+        'className': 'DriveControllerThread',
+        'import': 'controller.drivecontrollerthread'
+    },
+    'tape-checker': {
+        'max': 1,
+        'autocreate': True,
+        'className': 'TapeCheckerThread',
+        'import': 'controller.tapecheckerthread'
+    }
+}
+
 LTFSRoot = "/mnt/LTFS"
 Threads = threadlist()
 sessionMap = {}
+destinations = { 
+    'UMBRELLA-WORK': {
+        'name': 'Umbrella Work',
+        'localpath': '/mnt/ULAB/UMBRELLA/Work/_Archive_restored' 
+    },
+    'POD-WORK': {
+        'name': 'POD Work',
+        'localpath': '/mnt/ULAB/POD/Work/_Archive_restored'
+    },
+    'JUMPCUT-WORK': {
+        'name': 'Jumpcut Work (Z:)',
+        'localpath': '/mnt/ULAB/JUMPCUT/Work/_Archive_restored'
+    },
+}
 
 # LTO related settings
 vea_pre = "user."

@@ -1,7 +1,6 @@
 import model.variables as variables
 from model.folder import Folder
 from model.baseentity import BaseEntity
-from model.tapecollection import TapeCollection
 import re
 import os
 import hashlib
@@ -95,6 +94,7 @@ class File(BaseEntity):
     
 
     def getTapes( self ):
+        from model.tapecollection import TapeCollection
         def getTapesFromDb( self ):
             tapes = TapeCollection()
             tapes.setFilter( 'file', self )

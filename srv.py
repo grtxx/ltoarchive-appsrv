@@ -7,11 +7,8 @@ from tornado.web import Application
 from tornado.web import StaticFileHandler
 from ltoapi import LTOApi
 
-from model.job import Job
-
 
 def main():
-    
     app = Application(
         ( 
             ( r'/api/v1/(.*)', LTOApi ),
@@ -26,7 +23,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    job = Job( 4 )
-    print( job.getData() )
-    job.buildFilelist()

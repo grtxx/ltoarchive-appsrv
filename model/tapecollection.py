@@ -10,6 +10,38 @@ class TapeCollection(BaseCollection):
         self._filters = {}
 
 
+    @staticmethod
+    def isThereJobForUnlockedTapes():
+        db = variables.getScopedDb()
+        db.commit()
+        
+
+    @staticmethod
+    def lockTape( instanceId ):
+        db = variables.getScopedDb()
+        db.commit()
+        TapeCollection.releaseTape( instanceId )
+        db.commit()
+        db.start_transaction()
+        db.cmd( "UPDATE tapes SET lockedBy=%s WHERE id=(SELECT t.id FROM tapes AS t "
+            + "INNER JOIN jobfiles AS jf ON (t.id=jf.tapeId)"
+            + "WHERE ISNULL(t.lockedBy) AND jf.status='WAITING' "
+            + "ORDER BY jf.created "
+            + "LIMIT 1)", ( instanceId, ) )
+        t = Tape.createByInstanceId( instanceId )
+        if not t.isValid():
+            t = None
+        db.commit()
+        return t
+
+
+    @staticmethod
+    def releaseTape( instanceId ):
+        db = variables.getScopedDb()
+        db.cmd( "UPDATE tapes SET lockedby=NULL WHERE lockedBy=%s", ( instanceId, ) )
+        db.commit()
+
+
     def getFirstUsable( self ):
         usable = None
         lcn = 1024

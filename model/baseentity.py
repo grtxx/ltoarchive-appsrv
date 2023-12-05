@@ -7,14 +7,14 @@ class BaseEntity():
     _tablename = variables.TablePrefix + 'tapes'
     _idField = "id"
     _orderField = "id"
-    _localCache = {}
-
+ 
     def __init__( self, id=0 ):
         #self._fields = ()
         self._cached = False
         self._data = {}
         self._dataInDb = {}
         self._id = id
+        self._localCache = {}
 
 
     def __getattr__(self, name: str) -> Any:

@@ -1,13 +1,12 @@
 import threading
 import model.variables as variables
+from model.basethread import BaseThread
 
-class filelistBuilderThread( threading.Thread ):
+class FilelistBuilderThread( BaseThread ):
 
     def __init__( self, job ):
-        threading.Thread.__init__( self )
-        self.name = "filelistBuilder"
+        BaseThread.__init__( self, 'filelistbuilder' )
         self.job = job
-        variables.Threads.add( self, 'job-filelist-builder' )
     
     def run( self ):
         self.job.buildFilelist()

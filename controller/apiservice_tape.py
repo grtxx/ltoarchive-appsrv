@@ -2,6 +2,7 @@ from controller.apiservice_base import ApiService_base
 from model.tapecollection import TapeCollection
 from model.tape import Tape
 from model.routeresult import RouteResult
+import model.variables as variables
 import json
 from controller.tapecontentupdaterthread import TapeContentUpdaterThread
 
@@ -12,10 +13,33 @@ class ApiService_tape( ApiService_base ):
         routes = [
             { "method": "get",    "auth": False, "target": self.getTapeList,          "pattern": r"^tape/list$" },
             { "method": "put",    "auth": True,  "target": self.tape_new,             "pattern": r"^tape/new$" },
+            { "method": "get",    "auth": True,  "target": self.getWorkerCount,       "pattern": r"^tape/workercount$" },
+            { "method": "patch",  "auth": True,  "target": self.setWorkerCount,       "pattern": r"^tape/workercount$" },
             { "method": "delete", "auth": True,  "target": self.tape_drop,            "pattern": r"^tape/([^/]+)/drop$" },
             { "method": "patch",  "auth": True,  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
         ]
         return routes
+
+
+    def setWorkerCount( self, groups, session ):
+        args = json.loads( self._apiServer.request.body )
+        if 'worker-count' in args:
+            try:
+                wmax =  int(args['worker-count'])
+                if wmax < 0:
+                    wmax = 0
+                if wmax > 500:
+                    wmax = 500
+                variables.components['drive-controller']['max'] = wmax
+                return RouteResult( 200, "ok", { 'worker-count': variables.components['drive-controller']['max'] } )
+            except:
+                return RouteResult( 501, "invalid-request-data", {} )
+        else:
+            return RouteResult( 501, "invalid-request-data", {} )
+
+
+    def getWorkerCount( self, groups, session ):
+        return RouteResult( 200, "ok", { 'worker-count': variables.components['drive-controller']['max'] } )
 
 
     def tape_new( self, groups, session ):
