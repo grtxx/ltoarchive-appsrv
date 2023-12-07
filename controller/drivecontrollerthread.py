@@ -3,6 +3,7 @@ import subprocess
 from model.tapecollection import TapeCollection
 from model.basethread import BaseThread
 from model.job import Job
+import model.variables as variables
 import shutil
 
 class DriveControllerThread( BaseThread ):
@@ -49,7 +50,7 @@ class DriveControllerThread( BaseThread ):
                     idleTimer = idleTimer + 1
                     if idleTimer == 240 or TapeCollection.isThereJobForUnlockedTapes(): 
                         print( " "*25*self.getInstanceId(), "EJECT:" + self.currentTape.label )
-                        subprocess.Popen( [ "leadm", "tape", "move", "-L", "homeslot", self.currentTape.label ] ).wait()
+                        subprocess.Popen( [ variables.leadm, "tape", "move", "-L", "homeslot", self.currentTape.label ] ).wait()
                         TapeCollection.releaseTape( self.getInstanceId() )
                         print( " "*25*self.getInstanceId(), "TAPE UNLOCK:" + self.currentTape.label )
                         self.currentTape = None

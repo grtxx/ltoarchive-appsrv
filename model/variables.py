@@ -99,4 +99,5 @@ destinations = {
 
 # LTO related settings
 vea_pre = "user."
+leadm = "/opt/ibm/ltfsle/bin/leadm"
 
