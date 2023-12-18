@@ -1,5 +1,6 @@
 import threading
 import importlib
+import sys
 from time import sleep
 
 
@@ -55,12 +56,14 @@ class threadlist:
 
                 if not t['thread'].isAlive() and t['status'] == 'running':
                     print( "%s thread finished, removing" % ( t['name'] ) )
+                    sys.stdout.flush()
                     self.threadList.remove( t )
 
             # start any waiting thread
             for t in self.threadList:
                 if self.canStartNew( t['name'] ) and t['status'] != 'running':
                     print( "%s thread starting" % ( t['name'] ) )
+                    sys.stdout.flush()
                     t['thread'].setInstanceId( self.getNextInstanceId( t['name'] ) )
                     t['thread'].start()
                     t['status'] = 'running'
@@ -68,6 +71,7 @@ class threadlist:
             for tm in self.threadMax:
                 if self.canAddSpare( tm ) and self.threadMax[ tm ]['autocreate']:
                     print( "Creating new thread: %s" % ( tm ) )
+                    sys.stdout.flush()
                     module = importlib.import_module( self.threadMax[tm]['import'] )
                     cls = getattr( module, self.threadMax[tm]['className'] )
                     if cls != None:

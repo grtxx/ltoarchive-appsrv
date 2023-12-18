@@ -78,6 +78,10 @@ class Domain(BaseEntity):
             cur.executemany( "INSERT IGNORE INTO %stapeitems (tapeId, domainId, folderId, hash, startblock) VALUES (%%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs )
             cur.reset()
             cur = db.cursor()
+            cur.executemany( "UPDATE %sjobfiles SET fileId=NULL WHERE "
+                    "fileId IN (SELECT id FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s)" % ( variables.TablePrefix, variables.TablePrefix, ), delrecs )
+            cur.reset()
+            cur = db.cursor()
             cur.executemany( "DELETE FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s" % ( variables.TablePrefix, ), delrecs )
             cur.reset()
             cur = db.cursor()
@@ -89,3 +93,11 @@ class Domain(BaseEntity):
     def dropTape( self, tape ):
         db = variables.getScopedDb()
         db.cmd( "DELETE FROM `%stapeitems` WHERE domainId=%%s AND tapeId=%%s" % ( variables.TablePrefix, ), ( self.id(), tape.id(), ) )
+
+
+    def dropOrphanedFiles( self ):
+        if self.isValid():
+            db = variables.getScopedDb()
+            db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE fileId IN (SELECT id FROM files WHERE hash NOT IN (SELECT hash FROM tapeitems)" )
+            db.cmd( "DELETE FROM files WHERE domainId=%s " +
+                    "AND hash NOT IN (SELECT hash FROM tapeitems) ", [ self.id(), self.domainId ] )

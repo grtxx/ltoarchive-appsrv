@@ -37,7 +37,6 @@ def getDbConnection():
     cur = db.cursor()
     cur.execute( "SET NAMES utf8", () )
     db.commit()
-
     return db
 
 
@@ -49,18 +48,19 @@ def getScopedDb():
     sessionMap[tid].ping( reconnect=True )
     return sessionMap[tid]
 
+
 def dropScopedDb():
     tid = str(threading.current_thread().ident)
     if ( tid in sessionMap ):
         sessionMap[tid].close()
         del sessionMap[tid]
 
+
 def getDestinationConfig( name ):
     if ( name in destinations ):
         return destinations[ name ]
     else:
         return destinations[ list(destinations.keys())[0] ]
-
 
 
 TablePrefix = ""
@@ -78,6 +78,7 @@ components = {
         'import': 'controller.tapecheckerthread'
     }
 }
+
 
 LTFSRoot = "/mnt/LTFS"
 Threads = threadlist()

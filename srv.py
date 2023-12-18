@@ -24,8 +24,10 @@ def main():
 if __name__ == "__main__":
     main()
 
-    #from model.job import Job
-    #job = Job(43)
-    #job.status = 'WAITING'
-    #job.status = 'RESTORED'
-    #print("OK");
+    #from model.folder import Folder
+
+    #print( "FOLDER" )
+    #f = Folder(126622)
+    #print( f.getFullPath() )
+    #f.dropUnlinkedFiles()
+    #print( "OK" )

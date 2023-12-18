@@ -133,6 +133,16 @@ class Folder(BaseEntity):
         return coll
     
 
+    def dropUnlinkedFiles( self ):
+        if self.isValid():
+            for f in self.getSubFolders():
+                f.dropUnlinkedFiles()
+            db = variables.getScopedDb()
+            db.cmd( "DELETE FROM files WHERE parentFolderId=%s AND domainId=%s " +
+                    "AND hash NOT IN (SELECT hash FROM tapeitems) " +
+                    "AND id NOT IN (SELECT fileId FROM jobfiles) ", [ self.id(), self.domainId ] )
+
+
     def updateSize( self ):
         if self.isValid():
             size = 0

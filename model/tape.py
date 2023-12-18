@@ -1,5 +1,6 @@
 import model.variables as variables
 import os
+import sys
 import datetime
 import xattr
 from model.baseentity import BaseEntity
@@ -56,8 +57,10 @@ class Tape(BaseEntity):
         if ( self.isValid() ):
             db = variables.getScopedDb()
             print( "Dropping tape..." )
+            sys.stdout.flush()
             db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
             db.cmd( "DELETE FROM tapefolders WHERE tapeId=%s", [ self.id() ] )
+            db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE fileId IN (SELECT id FROM files WHERE (SELECT count(*) FROM tapeitems WHERE hash=files.hash AND folderId=files.parentFolderId)=0" )
             db.cmd( "DELETE FROM files WHERE (SELECT count(*) FROM tapeitems WHERE hash=files.hash AND folderId=files.parentFolderId)=0" )
 
             db.cmd( "DELETE FROM tapes WHERE id=%s", [ self.id() ] )
@@ -75,6 +78,7 @@ class Tape(BaseEntity):
                 self.updateDomainContent( d )
         except Exception as err:
             print( "ERROR: %s" % err )
+            sys.stdout.flush()
 
 
     def updateDomainContent( self, d ):
@@ -90,6 +94,7 @@ class Tape(BaseEntity):
             filelist = []
             dir = stack.pop()
             print( "[%s] %s - %s" % ( self.label, domain.name, dir ) )
+            sys.stdout.flush()
             files = os.listdir( os.path.join( root, dir ) )
             afolder = domain.getFolder( dir )
             for f in files:
@@ -133,20 +138,25 @@ class Tape(BaseEntity):
 
     def _updateTopFolders( self, topfolders ):
         print( "Updating folder size..." )
+        sys.stdout.flush()
         for topfolder in topfolders:
             print( "\t%s" % ( topfolder.name, ) )
+            sys.stdout.flush()
             topfolder.updateSize()
 
 
     def _updateOldVersions( self, folders ):
         db = variables.getScopedDb()
         print( "Updating shadow files..." )
+        sys.stdout.flush()
         db.cmd( "CREATE TEMPORARY TABLE updateOldV (id int primary key not null)" )
         for folder in folders:
             print( "\t%s" % ( folder.name, ) )
+            sys.stdout.flush()
             db.cmd( "UPDATE %sfiles SET isOldVersion=0 WHERE parentFolderId=%%s" % (variables.TablePrefix, ), [ folder.id() ] )
             db.cmd( "INSERT IGNORE INTO updateOldV SELECT id FROM %sfiles AS f WHERE parentFolderId=%%s AND domainId=%%s AND EXISTS (SELECT id FROM %sfiles AS ff WHERE ff.created>f.created AND ff.parentFolderId=f.parentFolderId AND ff.domainId=f.domainId AND ff.name=f.name)" % ( variables.TablePrefix, variables.TablePrefix,  ), [ folder.id(), folder.domainId ] )
         print( "\tcommit..." )            
+        sys.stdout.flush()
         db.cmd( "UPDATE %sfiles SET isOldVersion=1 WHERE id IN (SELECT id FROM updateOldV)" % ( variables.TablePrefix, ) )
         db.cmd( "DROP TABLE updateOldV" )
         db.commit()

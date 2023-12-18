@@ -8,10 +8,11 @@ import json
 import os
 import shutil
 import requests
+import sys
 
 class Job(BaseEntity):
     _tablename = variables.TablePrefix + 'jobs'
-    _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'status', 'nexttask', 'webhook' ]
+    _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'finished', 'status', 'nexttask', 'webhook' ]
     _orderField = "created DESC"
 
 
@@ -27,8 +28,9 @@ class Job(BaseEntity):
         super().__setattr__(name, value)
         if name == 'status' and value == 'RESTORED':
             if ( self.webhook != None and self.webhook != "" ):
-                r = requests.post( self.webhook, data=json.dumps( self.getData(), default=str ) )
+                r = requests.post( self.webhook + "?event=ready", data=json.dumps( self.getData(), default=str ) )
                 print( "Response:", r.content )
+                sys.stdout.flush()
 
 
     def getDefaultData(self):
@@ -67,6 +69,19 @@ class Job(BaseEntity):
             return 0;
 
 
+    def getFileSize( self, status = '' ):
+        if ( self.isValid() ):
+            db = variables.getScopedDb()
+            cur = db.cursor()
+            if ( status == '' ):
+                cur.execute( "SELECT IFNULL(sum(size),0) AS c FROM jobfiles WHERE jobId=%s", ( self._id, ) )
+            else:
+                cur.execute( "SELECT IFNULL(sum(size),0) AS c FROM jobfiles WHERE jobId=%s AND status=%s", ( self._id, status ) )
+            return cur.fetchOneDict()['c']
+        else:
+            return 0;
+
+
     def getTapeCount( self ):
         if ( self.isValid() ):
             db = variables.getScopedDb()
@@ -88,6 +103,7 @@ class Job(BaseEntity):
         d['filecount'] = self.getFileCount()
         d['tapecount'] = self.getTapeCount()
         d['fileready'] = self.getFileCount('RESTORED')
+        d['filesizeready'] = self.getFileSize('RESTORED')
         return d
     
 
@@ -106,7 +122,10 @@ class Job(BaseEntity):
         while st != None:
             statuslist.append( st['status'].decode() )
             st = cur.fetchOneDict()
-        if len(statuslist)==1 and 'RESTORED' in statuslist:
+        if len(statuslist)==2 and 'COPY' in statuslist and 'WAITING' in statuslist:
+            self.status = 'TAPE OPERATIONS'
+            self.save()
+        elif len(statuslist)==1 and 'RESTORED' in statuslist:
             self.status = 'RESTORED'
             self.save()
         elif len(statuslist)>1 and (('COPY' in statuslist) or ('RESTORED' in statuslist) ):
@@ -119,7 +138,7 @@ class Job(BaseEntity):
             db = variables.getScopedDb()
             fsp = f.getFirstUsableFileSysPathStruct()
             if fsp != None:
-                db.cmd( "INSERT INTO jobfiles (jobId, tapeId, fileId, srcpath, dstpath, dstfs, startblock, size, status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                db.cmd( "INSERT INTO jobfiles (jobId, tapeId, fileId, srcpath, dstpath, dstfs, startblock, size, status, created) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now())",
                     (
                         self.id(), 
                         fsp['tape'].id(), 
@@ -186,14 +205,16 @@ class Job(BaseEntity):
     def getNextFileForTape( tape ):
         db = variables.getScopedDb()
         cur = db.cursor()
-        cur.execute( "SELECT * FROM jobfiles WHERE tapeId=%s AND status IN ('WAITING','COPY') ORDER BY jobId, startblock LIMIT 1", ( tape.id(), ) )
+        cur.execute( "SELECT jf.* FROM jobfiles AS jf " +
+            "INNER JOIN jobs AS j ON (j.id=jf.jobId) "
+            "WHERE tapeId=%s AND j.status IN ('RESTORING','WAITING') AND jf.status IN ('WAITING','COPY') ORDER BY j.id, startblock LIMIT 1", ( tape.id(), ) )
         return cur.fetchOneDict()
 
 
     @staticmethod
     def updateJFStatus( jf, status ):
         db = variables.getScopedDb()
-        db.cmd( "UPDATE jobfiles SET status=%s WHERE id=%s", ( status, jf['id'] ) )
+        db.cmd( "UPDATE jobfiles SET status=%s, finished=now() WHERE id=%s", ( status, jf['id'] ) )
         job = Job( jf['jobId'] )
         job.updateStatus()
 
@@ -219,7 +240,7 @@ class Job(BaseEntity):
             Job.mkPath( jf['dstpath'] )
             #print( jf['srcpath'] + " -> " + jf['dstpath'] )
             try:
-                shutil.copy( jf['srcpath'], jf['dstpath'] )
+                shutil.copy2( jf['srcpath'], jf['dstpath'] )
             except:
                 pass
         Job.updateJFStatus( jf, 'RESTORED' )

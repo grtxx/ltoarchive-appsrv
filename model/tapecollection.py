@@ -28,7 +28,8 @@ class TapeCollection(BaseCollection):
         db.start_transaction()
         db.cmd( "UPDATE tapes SET lockedBy=%s WHERE id=(SELECT t.id FROM tapes AS t "
             + "INNER JOIN jobfiles AS jf ON (t.id=jf.tapeId)"
-            + "WHERE ISNULL(t.lockedBy) AND jf.status='WAITING' "
+            + "INNER JOIN jobs AS j ON (j.id=jf.jobId)"
+            + "WHERE ISNULL(t.lockedBy) AND jf.status='WAITING' AND j.status NOT IN ('PENDING', 'FILELIST') "
             + "ORDER BY jf.created "
             + "LIMIT 1)", ( instanceId, ) )
         t = Tape.createByInstanceId( instanceId )
