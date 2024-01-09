@@ -55,8 +55,7 @@ class DriveControllerThread( BaseThread ):
                         sys.stdout.flush()
                         Job.copyJF( jf )
                         copiedsize = copiedsize + jf['size']
-                        idleTimer = 0
-
+                    idleTimer = 0
                 else:
                     time.sleep(1)
                     idleTimer = idleTimer + 1

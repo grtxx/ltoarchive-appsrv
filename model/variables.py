@@ -7,10 +7,15 @@ import threading
 # no result execute on db
 def cmd( self, query, params=None ):
     cur = self.cursor()
-    cur.execute( query, params )
-    cur.reset()
+    res = False
+    try:
+        cur.execute( query, params )
+        cur.reset()
+        res = True
+    except:
+        pass
     self.commit()
-
+    return res
 
 # Extending cursor class with a new fetchOneDict method
 def fetchonedict( self ):

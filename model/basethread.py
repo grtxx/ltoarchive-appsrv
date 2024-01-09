@@ -3,11 +3,10 @@ import model.variables as variables
 
 class BaseThread(threading.Thread):
 
-    terminating = False
-    _instanceId = -1
-    manager = None
-
     def __init__( self, name ):
+        self._instanceId = -1
+        self.terminating = False
+        self.manager = None
         threading.Thread.__init__( self )
         variables.Threads.add( self, name )
 

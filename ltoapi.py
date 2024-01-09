@@ -11,6 +11,7 @@ from controller.apiservice_user import ApiService_user
 from controller.apiservice_domain import ApiService_domain
 from controller.apiservice_tape import ApiService_tape
 from controller.apiservice_job import ApiService_job
+from controller.apiservice_system import ApiService_system
 
 
 class LTOApi(tornado.web.RequestHandler):
@@ -25,6 +26,7 @@ class LTOApi(tornado.web.RequestHandler):
         self.addService( ApiService_user() )
         self.addService( ApiService_tape() )
         self.addService( ApiService_job() )
+        self.addService( ApiService_system() )
 
 
     def addService( self, srvObj ):
