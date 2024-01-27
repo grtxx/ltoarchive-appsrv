@@ -1,4 +1,3 @@
-import threading
 import model.variables as variables
 from model.basethread import BaseThread
 

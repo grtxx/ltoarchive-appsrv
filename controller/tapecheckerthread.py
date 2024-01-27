@@ -13,13 +13,16 @@ class TapeCheckerThread( BaseThread ):
 
     def run( self ):
         while not self.terminating:
-            TC = TapeCollection()
-            for tape in TC:
-                if os.path.isdir( "%s/%s" % ( variables.LTFSRoot, tape.label ) ):
-                    tape.isAvailable = 1
-                else:
-                    tape.isAvailable = 0
-                tape.save()
-                #print( tape.label )
-            TC = None
+            try:
+                TC = TapeCollection()
+                for tape in TC:
+                    if os.path.isdir( "%s/%s" % ( variables.LTFSRoot, tape.label ) ):
+                        tape.isAvailable = 1
+                    else:
+                        tape.isAvailable = 0
+                    tape.save()
+                    #print( tape.label )
+                TC = None
+            except Exception as e:
+                print( "Tapechecker error: %s" % ( e ) )
             time.sleep(30)

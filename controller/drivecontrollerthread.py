@@ -29,11 +29,11 @@ class DriveControllerThread( BaseThread ):
                     time.sleep(1)
                     idleTimer = idleTimer + 1
                 else:
-                    print( "                        "*self.getInstanceId(), "TAPE LOCKED, LOADING:" +self.currentTape.label )
+                    print( "                        "*self.getInstanceId(), "TAPE LOCKED:" +self.currentTape.label )
                     sys.stdout.flush()
-                    subprocess.Popen( [ variables.leadm, "tape", "move", "-L", "drive", self.currentTape.label ] ).wait()
-                    print( "                        "*self.getInstanceId(), "TAPE OK:" +self.currentTape.label )
-                    sys.stdout.flush()
+                    #subprocess.Popen( [ variables.leadm, "tape", "move", "-L", "drive", self.currentTape.label ] ).wait()
+                    #print( "                        "*self.getInstanceId(), "TAPE OK:" +self.currentTape.label )
+                    #sys.stdout.flush()
 
             else:
                 jf = Job.getNextFileForTape( self.currentTape )
