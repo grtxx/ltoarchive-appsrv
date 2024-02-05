@@ -5,6 +5,7 @@ from model.routeresult import RouteResult
 import model.variables as variables
 import json
 from controller.tapecontentupdaterthread import TapeContentUpdaterThread
+from controller.tapecontentclonerthread import TapeContentClonerThread
 
 
 class ApiService_tape( ApiService_base ):
@@ -17,6 +18,7 @@ class ApiService_tape( ApiService_base ):
             { "method": "patch",  "auth": True,  "target": self.setWorkerCount,       "pattern": r"^tape/workercount$" },
             { "method": "delete", "auth": True,  "target": self.tape_drop,            "pattern": r"^tape/([^/]+)/drop$" },
             { "method": "patch",  "auth": True,  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
+            { "method": "patch",  "auth": True,  "target": self.tape_clone,           "pattern": r"^tape/([^/]+)/cloneto/([^/]+)" },
         ]
         return routes
 
@@ -58,6 +60,16 @@ class ApiService_tape( ApiService_base ):
         tape = Tape.createByName( groups[1] )
         if tape.isValid():
             tc = TapeContentUpdaterThread( groups[1] )
+            return RouteResult( 200, "queued", {} )
+        else:
+            return RouteResult( 404, "tape-not-found", {} )
+
+
+    def tape_clone( self, groups, session ):
+        tape = Tape.createByName( groups[1] )
+        tape2 = Tape.createByName( groups[2] )
+        if tape.isValid() and tape2.isValid():
+            tc = TapeContentClonerThread( groups[1], groups[2] )
             return RouteResult( 200, "queued", {} )
         else:
             return RouteResult( 404, "tape-not-found", {} )

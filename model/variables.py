@@ -17,6 +17,19 @@ def cmd( self, query, params=None ):
     self.commit()
     return res
 
+
+
+def readArray( self, field, query, params=None ):
+    res = []
+    cur = self.cursor()
+    try:
+        cur.execute( query, params )
+        res.append( cur.fetchOneDict() )
+    except:
+        pass
+    self.commit()
+    return res
+
 # Extending cursor class with a new fetchOneDict method
 def fetchonedict( self ):
     row = self.fetchone()
@@ -30,6 +43,7 @@ def fetchonedict( self ):
     
 mysql.connector.cursor_cext.CMySQLCursor.fetchOneDict = fetchonedict
 mysql.connector.CMySQLConnection.cmd = cmd
+mysql.connector.CMySQLConnection.readArray = readArray
 
 
 def getDbConnection():

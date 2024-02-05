@@ -53,18 +53,40 @@ class Tape(BaseEntity):
         return os.path.join( variables.LTFSRoot, self.label )
 
 
-    def drop( self ):
+    def dropContent( self ):
         if ( self.isValid() ):
             db = variables.getScopedDb()
-            print( "Dropping tape..." )
+            print( "Dropping tape content..." )
+            topFolders = db.readArray( "folderId", "SELECT folderId FROM tapefolders WHERE tapeId=%s, folderId IN (SELECT id FROM folders WHERE ISNULL(parentFolderId))", [ self.id() ] )
             sys.stdout.flush()
             db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
             db.cmd( "DELETE FROM tapefolders WHERE tapeId=%s", [ self.id() ] )
-            db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE fileId IN (SELECT id FROM files WHERE (SELECT count(*) FROM tapeitems WHERE hash=files.hash AND folderId=files.parentFolderId)=0" )
-            db.cmd( "DELETE FROM files WHERE (SELECT count(*) FROM tapeitems WHERE hash=files.hash AND folderId=files.parentFolderId)=0" )
+            db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE tapeId=%s" % [ self.id() ] )
+            db.cmd( "DELETE FROM files WHERE hash NOT IN (SELECT hash FROM tapeitems)" )
+            db.cmd( "DELETE FROM folders WHERE id NOT IN (SELECT folderId FROM tapefolders ORDER BY folderId DESC)" )
+            self._updateTopFolders( topFolders )
+            self._updateOldVersions( topFolders )
 
+    def drop( self ):
+        if ( self.isValid() ):
+            db = variables.getScopedDb()
+            self.dropContent()
+            print( "Dropping tape..." )
+            sys.stdout.flush()
             db.cmd( "DELETE FROM tapes WHERE id=%s", [ self.id() ] )
 
+
+    def cloneTo( self, dstTape ):
+        try:
+            dstTape.dropContent();
+            print( "Cloning tape..." )
+            sys.stdout.flush()
+            db = variables.getScopedDb()
+            db.cmd( "INSERT INTO tapefolders (tapeId, folderId) SELECT %d as tapeId, folderId FROM tapefolders WHERE tapeId=%d" % ( dstTape.id(), self.id() ) )
+            db.cmd( "INSERT INTO tapeitems (tapeId, folderId, domainId, hash, startblock) SELECT %d as tapeId, folderId, domainId, hash, startblock FROM tapeitems WHERE tapeId=%d" % ( dstTape.id(), self.id() ) )
+        except Exception as err:
+            print( "ERROR: %s" % err )
+            sys.stdout.flush()
 
 
     def updateContent( self ):
