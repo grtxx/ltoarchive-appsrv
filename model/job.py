@@ -141,7 +141,7 @@ class Job(BaseEntity):
                 db.cmd( "INSERT INTO jobfiles (jobId, tapeId, fileId, srcpath, dstpath, dstfs, startblock, size, status, created) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now())",
                     (
                         self.id(), 
-                        None, #fsp['tape'].id(), 
+                        fsp['tape'].id(), 
                         None, #f.id(), 
                         fsp['srcpath'], 
                         "%s/%s/%s" % ( dstconfig['localpath'], self.username, fsp['vfspath'] ), 
