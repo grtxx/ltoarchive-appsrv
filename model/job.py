@@ -226,10 +226,12 @@ class Job(BaseEntity):
             path = path[:-1]
             ppart = "/"
             for p in path:
-                ppart = os.path.join( ppart, p )
-                if not os.path.exists( ppart ):
-                    os.mkdir( ppart )
+                if p != "":
+                    ppart = os.path.join( ppart, p )
+                    if not os.path.exists( ppart ):
+                        os.mkdir( ppart )
         except:
+            print( "Directory not created: %s" % path )
             pass
 
 
@@ -238,7 +240,7 @@ class Job(BaseEntity):
         Job.updateJFStatus( jf, 'COPY' )
         if not os.path.exists( jf['dstpath'] ):
             Job.mkPath( jf['dstpath'] )
-            #print( jf['srcpath'] + " -> " + jf['dstpath'] )
+#            print( jf['srcpath'] + " -> " + jf['dstpath'] )
             try:
                 shutil.copy2( jf['srcpath'], jf['dstpath'] )
             except:

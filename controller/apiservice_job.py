@@ -51,7 +51,7 @@ class ApiService_job( ApiService_base ):
         if ( ('dststorage' in params) and ('username' in params) and ('src' in params) ):
             j = Job()
             j.src = json.dumps( params['src'] )
-            j.dst = params['dststorage']
+            j.dststorage = params['dststorage']
             j.email = params['email']
             j.username = params['username']
             j.webhook = params['webhook']

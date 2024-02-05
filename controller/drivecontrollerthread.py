@@ -59,7 +59,7 @@ class DriveControllerThread( BaseThread ):
                 else:
                     time.sleep(1)
                     idleTimer = idleTimer + 1
-                    if idleTimer == 240 or TapeCollection.isThereJobForUnlockedTapes(): 
+                    if idleTimer == 600 or TapeCollection.isThereJobForUnlockedTapes(): 
                         print( " "*25*self.getInstanceId(), "TAPE UNLOADING:" + self.currentTape.label )
                         sys.stdout.flush()
                         subprocess.Popen( [ variables.leadm, "tape", "move", "-L", "homeslot", self.currentTape.label ] ).wait()
