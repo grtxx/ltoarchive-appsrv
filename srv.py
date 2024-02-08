@@ -6,7 +6,7 @@ import tornado.ioloop
 from tornado.web import Application
 from tornado.web import StaticFileHandler
 from ltoapi import LTOApi
-import requests
+import model.variables as Variables
 
 def main():
     app = Application(
@@ -17,7 +17,7 @@ def main():
     )
 
     http_server = tornado.httpserver.HTTPServer(app)
-    http_server.listen( 8000 )
+    http_server.listen( Variables.httpPort )
     tornado.ioloop.IOLoop.instance().start()
 
 

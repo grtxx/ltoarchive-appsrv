@@ -100,6 +100,7 @@ components = {
 
 
 LTFSRoot = "/mnt/LTFS"
+httpPort = 8000
 Threads = threadlist()
 sessionMap = {}
 destinations = { 

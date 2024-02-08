@@ -12,6 +12,7 @@ class TapeCheckerThread( BaseThread ):
     
 
     def run( self ):
+        db = variables.getScopedDb()
         while not self.terminating:
             try:
                 TC = TapeCollection()
@@ -26,3 +27,4 @@ class TapeCheckerThread( BaseThread ):
             except Exception as e:
                 print( "Tapechecker error: %s" % ( e ) )
             time.sleep(30)
+            db.commit()
