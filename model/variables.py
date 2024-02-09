@@ -110,7 +110,7 @@ destinations = {
     },
     'POD-WORK': {
         'name': 'POD Work',
-        'localpath': '/mnt/ULAB/POD/Work/_Archive_restored'
+        'localpath': '/mnt/ULAB/POD/Work1/_Archive_restored'
     },
     'JUMPCUT-WORK': {
         'name': 'Jumpcut Work (Z:)',
