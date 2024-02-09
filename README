@@ -16,3 +16,7 @@ Planned parts:
 - Node.js / Vue webpage with authentication
 - CLI
 - Fuse FS
+
+APPSERVER INSTALLATION
+
+- User empty_db.sql to create the database structure in MariaDB. The system is tested on CentOS Stream release 8
