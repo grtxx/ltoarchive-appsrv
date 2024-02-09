@@ -120,6 +120,9 @@ class Tape(BaseEntity):
             files = os.listdir( os.path.join( root, dir ) )
             afolder = domain.getFolder( dir )
             for f in files:
+                if ( f == "A008C005_230824TP.mxf" ):
+                    print( f )
+                    pass
                 fspath = os.path.join( root, dir, f )
                 if os.path.isfile( fspath ):
                     stb = 0
@@ -127,22 +130,26 @@ class Tape(BaseEntity):
                         rawattr = xattr.getxattr( fspath, "%sltfs.startblock" % ( variables.vea_pre, ) )
                         if ( rawattr != None ):
                             stb = int( str( bytearray( rawattr ), 'UTF-8' ) )
-                    except:
+                    except Exception as error:
+                        print( "Exception: ", error )
                         pass
                     n, ext = os.path.splitext( f )
-                    filelist.append( {
-                        'name': f,
-                        'ext': ext,
-                        'path': os.path.join( dir, f ),
-                        'hash': model.file.genHash( fspath ),
-                        'domain': domain,
-                        'tape': self,
-                        'parentFolder': afolder,
-                        'startblock': stb,
-                        'size': os.path.getsize( fspath ),
-                        'created': datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
-                    } )
-                    pass
+                    try:
+                        filelist.append( {
+                            'name': f,
+                            'ext': ext,
+                            'path': os.path.join( dir, f ),
+                            'hash': model.file.genHash( fspath ),
+                            'domain': domain,
+                            'tape': self,
+                            'parentFolder': afolder,
+                            'startblock': stb,
+                            'size': os.path.getsize( fspath ),
+                            'created': datetime.datetime.fromtimestamp( os.path.getmtime( fspath ) )
+                        } )
+                    except Exception as error:
+                        print( "Exception: ", error )
+                        pass
                 else:
                     folder = Folder.createByNameParentAndDomain( f, afolder, domain )
                     folder.addTape( self )
