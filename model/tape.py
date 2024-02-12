@@ -61,7 +61,7 @@ class Tape(BaseEntity):
             sys.stdout.flush()
             db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
             db.cmd( "DELETE FROM tapefolders WHERE tapeId=%s", [ self.id() ] )
-            db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE tapeId=%s" % [ self.id() ] )
+            #db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE tapeId=%s" % [ self.id() ] )
             db.cmd( "DELETE FROM files WHERE hash NOT IN (SELECT hash FROM tapeitems)" )
             db.cmd( "DELETE FROM folders WHERE id NOT IN (SELECT folderId FROM tapefolders ORDER BY folderId DESC)" )
             self._updateTopFolders( topFolders )

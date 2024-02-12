@@ -78,10 +78,10 @@ class Domain(BaseEntity):
             cur.executemany( "DELETE FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s" % ( variables.TablePrefix, ), delrecs )
             cur.reset()
 
-            cur = db.cursor()
-            cur.executemany( "UPDATE %sjobfiles SET fileId=NULL WHERE "
-                    "fileId IN (SELECT id FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s)" % ( variables.TablePrefix, variables.TablePrefix, ), delrecs )
-            cur.reset()
+            #cur = db.cursor()
+            #cur.executemany( "UPDATE %sjobfiles SET fileId=NULL WHERE "
+            #        "fileId IN (SELECT id FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s)" % ( variables.TablePrefix, variables.TablePrefix, ), delrecs )
+            #cur.reset()
 
             cur = db.cursor()
             cur.executemany( "INSERT IGNORE INTO %stapeitems (tapeId, domainId, folderId, hash, startblock) VALUES (%%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs )
