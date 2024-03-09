@@ -90,12 +90,18 @@ class BaseEntity():
                 self._id = 0
 
 
-    def changedFields( self ):
+    def changedFields(self):
+        """
+        Returns a tuple of field names that have been changed compared to the data in the database.
+
+        Returns:
+            tuple: A tuple of field names that have been changed.
+        """
         self.cacheIf()
         cf = ()
         for i in self._fields:
             ok = False
-            if ( self._dataInDb == None ):
+            if self._dataInDb == None:
                 ok = True
             else:
                 if i not in self._dataInDb:
@@ -104,30 +110,39 @@ class BaseEntity():
                     if self._data[i] != self._dataInDb[i]:
                         ok = True
             if ok:
-                cf = cf + ( i, )
+                cf = cf + (i,)
         return cf
 
 
-    def save( self ):
+    def save(self):
+        """
+        Saves the entity to the database.
+
+        This method saves the entity to the database by generating and executing the appropriate SQL statements.
+
+        Returns:
+            None
+        """
         fields = self.changedFields()
         sqlfields = ()
         sqlvals = ()
         for c in fields:
-            sqlfields = sqlfields + ( "`"+c+"`=%s", )
+            sqlfields = sqlfields + ("`" + c + "`=%s",)
             if c in self._data:
-                sqlvals = sqlvals + ( self._data[c], )
+                sqlvals = sqlvals + (self._data[c],)
             else:
-                sqlvals = sqlvals + ( None, )
+                sqlvals = sqlvals + (None,)
 
-        if len( sqlvals ) > 0:
+        if len(sqlvals) > 0:
             db = variables.getScopedDb()
+            db.commit()
             if self.id() == None:
                 cur = db.cursor()
-                cur.execute( "INSERT INTO %s () VALUES ()" % ( self._tablename, ) )
+                cur.execute("INSERT INTO %s () VALUES ()" % (self._tablename,))
                 self._id = cur.lastrowid;
                 cur.reset()
-            sql = "UPDATE %s SET %s WHERE %s=%d" % ( self._tablename, ", ".join( sqlfields ), self._idField, self._id )
-            db.cmd( sql, sqlvals )
+            sql = "UPDATE %s SET %s WHERE %s=%d" % (self._tablename, ", ".join(sqlfields), self._idField, self._id)
+            db.cmd(sql, sqlvals)
             db.commit()
 
 

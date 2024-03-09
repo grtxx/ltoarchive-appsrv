@@ -14,10 +14,8 @@ class ApiService_job( ApiService_base ):
             { "method": "post",   "auth": True,  "target": self.postJob,              "pattern": r"^job/new$" },
             { "method": "get",    "auth": False, "target": self.getJob,               "pattern": r"^job/(\d+)$" },
             { "method": "delete", "auth": True,  "target": self.dropJob,              "pattern": r"^job/(\d+)$" },
-
-            #{ "method": "put",    "auth": True,  "target": self.tape_new,             "pattern": r"^tape/new$" },
-            #{ "method": "delete", "auth": True,  "target": self.tape_drop,            "pattern": r"^tape/([^/]+)/drop$" },
-            #{ "method": "patch",  "auth": True,  "target": self.tape_updateContent,   "pattern": r"^tape/([^/]+)/updatecontent$" },
+            { "method": "patch",  "auth": True,  "target": self.continueJob,          "pattern": r"^job/(\d+)/continue$" },
+            { "method": "patch",  "auth": True,  "target": self.pauseJob,             "pattern": r"^job/(\d+)/pause$" },
         ]
         return routes
 
@@ -62,3 +60,28 @@ class ApiService_job( ApiService_base ):
         else:
             return RouteResult( 405, "invalid-data", {} )
 
+
+    def continueJob( self, groups, session ):
+        job = Job( groups[1] )
+        if ( job.isValid() ):
+            if ( job.status == "FREESPACE-STOP" or job.status == "PAUSED" ):
+                job.status = "WAITING"
+                job.save() 
+                return RouteResult( 200, "ok", {} )
+            else:
+                return RouteResult( 406, "invalid-status", {} )
+        else:
+            return RouteResult( 404, "not-found", {} ) 
+        
+
+    def pauseJob( self, groups, session ):
+        job = Job( groups[1] )
+        if ( job.isValid() ):
+            if ( job.status == "RESTORING" or job.status == "TAPE-OPERATIONS" or job.status == "FREESPACE-STOP" ):
+                job.status = "PAUSED"
+                job.save() 
+                return RouteResult( 200, "ok", {} )
+            else:
+                return RouteResult( 406, "invalid-status", {} )
+        else:
+            return RouteResult( 404, "not-found", {} ) 

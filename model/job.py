@@ -33,6 +33,23 @@ class Job(BaseEntity):
                 sys.stdout.flush()
 
 
+    def _reReadStatus( self ):
+        if ( self.isValid() ):
+            db = variables.getScopedDb()
+            db.commit()
+            cur = db.cursor()
+            cur.execute( "SELECT status FROM jobs WHERE id=%s", ( self.id(), ) )
+            self._data['status'] = cur.fetchOneDict()['status']
+
+
+    def __getattr__(self, name):
+        self.cacheIf()
+        if name == 'status':
+            self._reReadStatus()
+            return self._data['status'].decode()
+        return super().__getattr__(name)
+
+
     def getDefaultData(self):
         dt = super().getDefaultData()
         dt['created'] = datetime.datetime.now()
@@ -115,6 +132,7 @@ class Job(BaseEntity):
 
     def updateStatus( self ):
         db = variables.getScopedDb()
+        db.commit()
         cur = db.cursor()
         cur.execute( "SELECT DISTINCT status FROM jobfiles WHERE jobId=%s", ( self.id(), ) )
         statuslist = []
@@ -128,7 +146,7 @@ class Job(BaseEntity):
         elif len(statuslist)==1 and 'RESTORED' in statuslist:
             self.status = 'RESTORED'
             self.save()
-        elif len(statuslist)>1 and (('COPY' in statuslist) or ('RESTORED' in statuslist) ):
+        elif self.status != 'PAUSED' and len(statuslist)>1 and (('COPY' in statuslist) or ('RESTORED' in statuslist) ):
             self.status = 'RESTORING'
             self.save()
 
@@ -204,10 +222,14 @@ class Job(BaseEntity):
     @staticmethod
     def getNextFileForTape( tape ):
         db = variables.getScopedDb()
+        db.commit()
         cur = db.cursor()
         cur.execute( "SELECT jf.* FROM jobfiles AS jf " +
-            "INNER JOIN jobs AS j ON (j.id=jf.jobId) "
-            "WHERE tapeId=%s AND j.status IN ('RESTORING','WAITING') AND jf.status IN ('WAITING','COPY') ORDER BY j.id, startblock LIMIT 1", ( tape.id(), ) )
+            "INNER JOIN jobs AS j ON (j.id=jf.jobId) " +
+            "WHERE tapeId=%s AND " +
+            "j.status IN ('RESTORING','WAITING') AND " +
+            "jf.status IN ('WAITING','COPY') " +
+            "ORDER BY j.id, startblock LIMIT 1", ( tape.id(), ) )
         return cur.fetchOneDict()
 
 

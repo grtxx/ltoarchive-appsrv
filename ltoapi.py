@@ -80,12 +80,12 @@ class LTOApi(tornado.web.RequestHandler):
 
     def executeRoute( self, r, groups ):
         session = self.auth( r )
-        if ( r["auth"]==False or session.userId != None ):
+        if ( r["auth"] == False or session.userId != None ):
             db = variables.getScopedDb()
             db.commit()
             res = r["target"]( groups, session )
         else:
-            res = RouteResult( 500, "query-not-authenticated", {} )
+            res = RouteResult( 501, "query-not-authenticated", {} )
         self.output( res )
 
 
