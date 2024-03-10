@@ -45,8 +45,12 @@ class Job(BaseEntity):
     def __getattr__(self, name):
         self.cacheIf()
         if name == 'status':
-            self._reReadStatus()
-            return self._data['status'].decode()
+            if ( self.isValid() ):
+                self._reReadStatus()
+            if 'status' in self._data:  
+                return self._data['status'].decode()
+            else:
+                return "PENDING"
         return super().__getattr__(name)
 
 
