@@ -42,7 +42,7 @@ class DriveControllerThread( BaseThread ):
                         total, used, free = shutil.disk_usage( jf['dstfs'] )
                     except:
                         free = 10 * (2**30)
-                    if ( free < 700 * (2**30) and copiedsize > 100*1024*1024*1024 ):
+                    if ( free < 500 * (2**30) and copiedsize > 100*1024*1024*1024 ):
                         copiedsize = 0
                         job = Job( jf['jobId'] )
                         job.status = "FREESPACE-STOP"
@@ -51,6 +51,9 @@ class DriveControllerThread( BaseThread ):
                         sys.stdout.flush()
                         time.sleep(30)
                     else:
+                        if ( job.status == "FREESPACE-STOP" ):
+                            job.status = "RESTORING"
+                            job.save()                            
                         print( " "*25*self.getInstanceId(), str(jf['tapeId'])+": "+str(jf['startblock']) )
                         sys.stdout.flush()
                         Job.copyJF( jf )
