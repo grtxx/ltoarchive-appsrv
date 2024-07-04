@@ -49,11 +49,8 @@ class DriveControllerThread( BaseThread ):
                         job.save()
                         print( " "*25*self.getInstanceId(), "FREESPACE-STOP" )
                         sys.stdout.flush()
-                        time.sleep(30)
+                        time.sleep(10)
                     else:
-                        if ( job.status == "FREESPACE-STOP" ):
-                            job.status = "RESTORING"
-                            job.save()                            
                         print( " "*25*self.getInstanceId(), str(jf['tapeId'])+": "+str(jf['startblock']) )
                         sys.stdout.flush()
                         Job.copyJF( jf )
