@@ -231,9 +231,9 @@ class Job(BaseEntity):
         cur.execute( "SELECT jf.* FROM jobfiles AS jf " +
             "INNER JOIN jobs AS j ON (j.id=jf.jobId) " +
             "WHERE tapeId=%s AND " +
-            "j.status IN ('RESTORING','WAITING') AND " +
+            "j.status IN ('RESTORING','WAITING','FREESPACE-STOP') AND " +
             "jf.status IN ('WAITING','COPY') " +
-            "ORDER BY j.id, startblock LIMIT 1", ( tape.id(), ) )
+            "ORDER BY (j.status='FREESPACE-STOP'), j.id, startblock LIMIT 1", ( tape.id(), ) )
         return cur.fetchOneDict()
 
 

@@ -37,6 +37,7 @@ class DriveControllerThread( BaseThread ):
 
             else:
                 jf = Job.getNextFileForTape( self.currentTape )
+                job = Job( jf['jobId'] )
                 if jf != None:
                     try:
                         total, used, free = shutil.disk_usage( jf['dstfs'] )
@@ -44,13 +45,15 @@ class DriveControllerThread( BaseThread ):
                         free = 10 * (2**30)
                     if ( free < 500 * (2**30) and copiedsize > 100*1024*1024*1024 ):
                         copiedsize = 0
-                        job = Job( jf['jobId'] )
                         job.status = "FREESPACE-STOP"
                         job.save()
                         print( " "*25*self.getInstanceId(), "FREESPACE-STOP" )
                         sys.stdout.flush()
                         time.sleep(10)
                     else:
+                        if ( job.status != "RESTORING" ):
+                            job.status = "RESTORING"
+                            job.save()
                         print( " "*25*self.getInstanceId(), str(jf['tapeId'])+": "+str(jf['startblock']) )
                         sys.stdout.flush()
                         Job.copyJF( jf )
