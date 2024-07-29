@@ -1,3 +1,4 @@
+import json
 from controller.apiservice_base import ApiService_base
 from model.routeresult import RouteResult
 from model.domain import Domain
@@ -55,14 +56,13 @@ class ApiService_domain( ApiService_base ):
 
 
     def putDomain( self, groups, session ):
-        session = variables.getScopedSession()
         try:
             args = json.loads( self.request.body )
             if ( args['name'] != "" ):
-                domain = session.query(ArchiveDomain).filter( ArchiveDomain.name==args['name'] ).first()
-                if ( not domain ):
-                    session.add( ArchiveDomain(name=args['name'] ) )
-                    session.commit()
+                domain = Domain.createByName( args['name'] )
+                if ( not domain.isValid() ):
+                    domain.isActive = True
+                    domain.save();
                     return RouteResult( 200, "ok", {} )
                 elif ( domain.isActive == False ):
                     domain.isActive = True;
