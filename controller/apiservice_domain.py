@@ -42,13 +42,11 @@ class ApiService_domain( ApiService_base ):
 
 
     def dropDomain( self, groups, session ):
-        session = variables.getScopedSession()
         try:
-            aDomain = session.query(ArchiveDomain).filter( ArchiveDomain.name==groups[1] ).first()
-            if ( aDomain ):
+            aDomain = Domain.createByName( groups[1] )
+            if ( aDomain.isValid ):
                 aDomain.isActive = False
-                aDomain.kill()
-                session.commit()
+                aDomain.save()
                 return RouteResult( 200, "ok", {} )
             else:
                 return RouteResult( 404, "not found", {} )

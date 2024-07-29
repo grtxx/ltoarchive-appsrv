@@ -7,7 +7,7 @@ from model.baseentity import BaseEntity
 
 class Domain(BaseEntity):
     _tablename = variables.TablePrefix + 'domains'
-    _fields = [ 'name' ]
+    _fields = [ 'name', 'isActive' ]
     _orderField = 'name, id'
             
 
