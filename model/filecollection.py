@@ -5,6 +5,7 @@ import model.variables
 
 class FileCollection(BaseCollection):
     _itemClass = File
+    
 
     def sqlCondition( self, name, value ):
         if name == "name":

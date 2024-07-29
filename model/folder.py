@@ -4,7 +4,7 @@ from model.baseentity import BaseEntity
 class Folder(BaseEntity):
     _tablename = variables.TablePrefix + 'folders'
     _fields = [ 'domainId', 'name', 'size', 'created', 'isDeleted', 'parentFolderId' ]
-    _orderField = "name"  
+    _orderField = "name, id"  
 
 
     def __init__( self, id = 0 ):
@@ -125,11 +125,13 @@ class Folder(BaseEntity):
         from model.domain import Domain
         return Domain( self.domainId )
 
-    def getFiles( self ):
+    def getFiles( self, top, count ):
         from model.filecollection import FileCollection
         coll = FileCollection()
         coll.setFilter( 'parentFolderId', self.id() )
         coll.setFilter( 'domainId', self.domainId )
+        if ( int(top) >= 0 and int(count) > 0 ):
+            coll.setLimit( top, count )
         return coll
     
 

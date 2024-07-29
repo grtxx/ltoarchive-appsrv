@@ -120,9 +120,6 @@ class Tape(BaseEntity):
             files = os.listdir( os.path.join( root, dir ) )
             afolder = domain.getFolder( dir )
             for f in files:
-                if ( f == "A008C005_230824TP.mxf" ):
-                    print( f )
-                    pass
                 fspath = os.path.join( root, dir, f )
                 if os.path.isfile( fspath ):
                     stb = 0

@@ -13,7 +13,7 @@ import sys
 class Job(BaseEntity):
     _tablename = variables.TablePrefix + 'jobs'
     _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'finished', 'status', 'nexttask', 'webhook' ]
-    _orderField = "created DESC"
+    _orderField = "created DESC, id DESC"
 
 
     def __init__( self, id = 0 ):

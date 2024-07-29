@@ -54,27 +54,29 @@ class LTOApi(tornado.web.RequestHandler):
 
     def auth( self, r ):
         if ( r["auth"] == None or r["auth"] == False ):
-            return None
-        sessionId = self.request.headers.get( "X-SessionId")
-        accessToken = self.request.headers.get( "X-AccessToken")
-        queryGuid = self.request.headers.get( "X-QueryGuid")
-        signature = self.request.headers.get( "X-Signature")
-        self.sessionCleanup()
-        session = None
-        if sessionId != None:
-            if ( self._sessions[ sessionId ] ):
-                session = self._sessions[ sessionId ]
-            else:
-                session = Session.createByToken( sessionId )
-        if accessToken != None:
-            if ( accessToken in self._sessions ):
-                session = self._sessions[ accessToken ]
-                if not session.auth( queryGuid, signature ):
-                    session = None
-            else:
-                session = Session.appAuth( accessToken, queryGuid, signature )
-        if session == None:
             session = Session()
+        else:
+            sessionId = self.request.headers.get( "X-SessionId")
+            accessToken = self.request.headers.get( "X-AccessToken")
+            queryGuid = self.request.headers.get( "X-QueryGuid")
+            signature = self.request.headers.get( "X-Signature")
+            self.sessionCleanup()
+            session = None
+            if sessionId != None:
+                if ( self._sessions[ sessionId ] ):
+                    session = self._sessions[ sessionId ]
+                else:
+                    session = Session.createByToken( sessionId )
+            if accessToken != None:
+                if ( accessToken in self._sessions ):
+                    session = self._sessions[ accessToken ]
+                    if not session.auth( queryGuid, signature ):
+                        session = None
+                else:
+                    session = Session.appAuth( accessToken, queryGuid, signature )
+            if session == None:
+                session = Session()
+        session.setRequestHandler( self )
         return session
 
 

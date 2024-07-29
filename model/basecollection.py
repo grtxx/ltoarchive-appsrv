@@ -12,6 +12,8 @@ class BaseCollection:
         self._filters = {}
         self._loaded = False
         self._iterCursor = 0
+        self._top = -1
+        self._count = -1
 
 
     def __iter__( self ):
@@ -29,6 +31,10 @@ class BaseCollection:
     def setFilter( self, name, value ):
         self._filters[name] = value
 
+
+    def setLimit( self, top, count ):
+        self._top = int(top)
+        self._count = int(count)
 
     def sqlCondition( self, name, value ):
         pass
@@ -60,6 +66,8 @@ class BaseCollection:
             cur = db.cursor()
             sqlcond = self.buildFilterSql()
             sql = "SELECT `%s` FROM `%s` WHERE %s ORDER BY %s" % ( ditem._idField, ditem._tablename, sqlcond["wherecondition"], ditem._orderField + ", " + ditem._idField )            
+            if ( self._top >= 0 and self._count > 0 ):
+                sql = sql + " LIMIT %s, %s" % ( self._top, self._count )
             cur.execute( sql, sqlcond["vars"] )
             self._ids = []
             item = cur.fetchOneDict()

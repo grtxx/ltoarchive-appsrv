@@ -8,7 +8,7 @@ from model.baseentity import BaseEntity
 class Domain(BaseEntity):
     _tablename = variables.TablePrefix + 'domains'
     _fields = [ 'name' ]
-    _orderField = 'name'
+    _orderField = 'name, id'
             
 
     @staticmethod
@@ -55,6 +55,17 @@ class Domain(BaseEntity):
         self.isActive = False
         self.save()
 
+
+    def rangedExecute( self, db, sql, records ):
+        while len(records) > 0:
+            recsforsql = []
+            for i in range(0, 100):
+                if len(records) > 0:
+                    recsforsql.append( records.pop() )
+            cur = db.cursor()
+            cur.executemany( sql, recsforsql )
+            cur.reset()
+
     
     def addFilesBulk( self, filelist ):
 #        'path': os.path.join( dir, f ),
@@ -66,6 +77,7 @@ class Domain(BaseEntity):
         recs = []
         recs2 = []
         delrecs = []
+        i = 0;
         for f in filelist:
             rec = ( f["tape"].id(), f["domain"].id(), None if f["parentFolder"] == None else f["parentFolder"].id(), f["hash"], f["startblock"] )
             rec2 = ( None if f["parentFolder"] == None else f["parentFolder"].id(), f["domain"].id(), f["name"], f["ext"], f["hash"], f["size"], f["created"] )
@@ -74,22 +86,9 @@ class Domain(BaseEntity):
             recs2.append( rec2 )
             delrecs.append( delrec )
         if len( recs ) > 0:
-            cur = db.cursor()
-            cur.executemany( "DELETE FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s" % ( variables.TablePrefix, ), delrecs )
-            cur.reset()
-
-            #cur = db.cursor()
-            #cur.executemany( "UPDATE %sjobfiles SET fileId=NULL WHERE "
-            #        "fileId IN (SELECT id FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s)" % ( variables.TablePrefix, variables.TablePrefix, ), delrecs )
-            #cur.reset()
-
-            cur = db.cursor()
-            cur.executemany( "INSERT IGNORE INTO %stapeitems (tapeId, domainId, folderId, hash, startblock) VALUES (%%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs )
-            cur.reset()
-
-            cur = db.cursor()
-            cur.executemany( "INSERT IGNORE INTO %sfiles (parentFolderId, domainId, name, ext, hash, size, created) VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs2 )
-            cur.reset()
+            self.rangedExecute( db, "DELETE FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s" % ( variables.TablePrefix, ), delrecs )
+            self.rangedExecute( db, "INSERT IGNORE INTO %stapeitems (tapeId, domainId, folderId, hash, startblock) VALUES (%%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs )
+            self.rangedExecute( db, "INSERT IGNORE INTO %sfiles (parentFolderId, domainId, name, ext, hash, size, created) VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs2 )
         db.commit()
 
 

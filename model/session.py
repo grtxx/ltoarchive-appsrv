@@ -8,7 +8,7 @@ import base64
 
 class Session(BaseEntity):
     _tablename = variables.TablePrefix + 'sessions'
-    _fields = ( 'sessionId', 'userId', 'lastseen' )
+    _fields = ( 'sessionId', 'userId', 'lastseen', '_requestHandler' )
 
 
     @staticmethod
@@ -31,6 +31,14 @@ class Session(BaseEntity):
         super().__init__()
         self.sessionId = ""
 
+
+    def setRequestHandler( self, rh ):
+        self._requestHandler = rh
+
+
+    def getRequestHandler( self ):
+        return self._requestHandler
+    
 
     def getAppByToken( self, token ):
         return App.createByAccessToken( token )
