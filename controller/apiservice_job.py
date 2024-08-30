@@ -38,6 +38,7 @@ class ApiService_job( ApiService_base ):
 
     def getJobList( self, groups, session ):
         jobs = JobCollection()
+        jobs.setLimit(0,50)
         joblist = []
         for job in jobs:
             joblist.append( job.getData() )
