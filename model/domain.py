@@ -112,6 +112,11 @@ class Domain(BaseEntity):
             fc.setFilter( "domainId", self.id() )
             fc.setFilter( "qstr", qstr )
             fc.setLimit( page * 20, 20 );
-            return fc.getData()
+            res = []
+            for f in fc:
+                dt = f.getData()
+                dt['fullpath'] = f.getFullPath()
+                res.append( dt )
+            return res
         else:
             return [];
