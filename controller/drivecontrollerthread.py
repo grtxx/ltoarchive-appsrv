@@ -65,6 +65,7 @@ class DriveControllerThread( BaseThread ):
                         idleTimer = 0
                 else:
                     counters['JOBID'] = 0
+                    counters['COPIED_BYTES'] = 0
                     self.manager.setStatus( self, "Idle", counters )
                     time.sleep(1)
                     idleTimer = idleTimer + 1
