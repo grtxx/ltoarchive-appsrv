@@ -12,7 +12,9 @@ class TapeContentClonerThread( BaseThread ):
 
     
     def run( self ):
+        self.manager.setMessage( self, "Cloning tape %s to %s" % ( self.tapeName, self.dstTapeName ) )
         tape = Tape.createByName( self.tapeName )
         dstTape = Tape.createByName( self.dstTapeName )
         tape.cloneTo( dstTape )
         variables.dropScopedDb()
+        self.manager.setMessage( self, "Shutting down" )

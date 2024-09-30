@@ -17,6 +17,8 @@ class FileCollection(BaseCollection):
                 return {  "sql": "ISNULL(files.parentFolderId)", "vars": [] }
         elif name == "domainId":
             return {  "sql": "files.domainId=%s", "vars": [ value ] }
+        elif name == "qstr":
+            return {  "sql": "files.name=%s", "vars": [ value ] }
         pass
 
 

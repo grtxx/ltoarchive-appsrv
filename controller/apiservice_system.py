@@ -23,7 +23,7 @@ class ApiService_system( ApiService_base ):
     def getTasks( self, groups, session ):
         threads = []
         for d in Variables.Threads.threadList:
-            threads.append( { 'name': d['name'], 'status': d['status'] } )
+            threads.append( { 'name': d['name'], 'status': d['status'], 'message': d['message'], 'counters': d['counters'] } )
         return RouteResult( 200, "ok", { 'tasks': threads } )
 
 

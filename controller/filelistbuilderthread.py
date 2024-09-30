@@ -8,5 +8,7 @@ class FilelistBuilderThread( BaseThread ):
         self.job = job
     
     def run( self ):
+        self.manager.setMessage( self, "Building filelist" )
         self.job.buildFilelist()
         variables.dropScopedDb()
+        self.manager.setMessage( self, "Shutting down" )

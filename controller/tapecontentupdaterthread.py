@@ -11,6 +11,8 @@ class TapeContentUpdaterThread( BaseThread ):
 
     
     def run( self ):
+        self.manager.setMessage( self, "Updating content for %s" % ( self.tapeName ) )
         tape = Tape.createByName( self.tapeName )
         tape.updateContent()
         variables.dropScopedDb()
+        self.manager.setMessage( self, "Shutting down" )

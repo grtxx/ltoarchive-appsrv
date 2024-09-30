@@ -14,6 +14,7 @@ class TapeCheckerThread( BaseThread ):
     def run( self ):
         db = variables.getScopedDb()
         while not self.terminating:
+            self.manager.setMessage( self, "Checking tapes" )
             try:
                 TC = TapeCollection()
                 for tape in TC:
@@ -25,6 +26,9 @@ class TapeCheckerThread( BaseThread ):
                     #print( tape.label )
                 TC = None
             except Exception as e:
+                self.manager.setCounters( self, { 'lasterror: %s' % ( e ) } )
                 print( "Tapechecker error: %s" % ( e ) )
-            time.sleep(30)
+            self.manager.setMessage( self, "Sleeping" )
             db.commit()
+            time.sleep(30)
+        self.manager.setMessage( self, "Shutting down" )

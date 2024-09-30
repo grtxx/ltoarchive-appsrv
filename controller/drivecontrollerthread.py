@@ -17,6 +17,7 @@ class DriveControllerThread( BaseThread ):
     
 
     def run( self ):
+        counters = { 'CURRENT_TAPE': '', 'COPIED_BYTES': 0, 'JOBID': 0 }
         idleTimer = 0
         copiedsize = 0
         print ( "%s started. InstanceId=%d" % ( self.name, self.getInstanceId() ) )
@@ -24,21 +25,23 @@ class DriveControllerThread( BaseThread ):
         while not self.terminating and self.getInstanceId() < self.manager.getMaxInstanceCount( self.name ):
 
             if self.currentTape == None: # no tape selected
+                self.manager.setStatus( self, "Idle", counters )
                 self.currentTape = TapeCollection.lockTape( self.getInstanceId() )
                 if self.currentTape == None:
                     time.sleep(1)
                     idleTimer = idleTimer + 1
                 else:
-                    print( "                        "*self.getInstanceId(), "TAPE LOCKED:" +self.currentTape.label )
+                    copiedsize = 0
+                    counters['CURRENT_TAPE'] = self.currentTape.label
+                    self.manager.setMessage( self, "Locking tape %s" % ( self.currentTape.label ) )
+                    self.manager.setCounters( self, counters )
                     sys.stdout.flush()
                     #subprocess.Popen( [ variables.leadm, "tape", "move", "-L", "drive", self.currentTape.label ] ).wait()
-                    #print( "                        "*self.getInstanceId(), "TAPE OK:" +self.currentTape.label )
-                    #sys.stdout.flush()
-
             else:
                 jf = Job.getNextFileForTape( self.currentTape )
-                job = Job( jf['jobId'] )
                 if jf != None:
+                    job = Job( jf['jobId'] )
+                    counters['JOBID'] = jf['jobId']
                     try:
                         total, used, free = shutil.disk_usage( jf['dstfs'] )
                     except:
@@ -47,29 +50,29 @@ class DriveControllerThread( BaseThread ):
                         copiedsize = 0
                         job.status = "FREESPACE-STOP"
                         job.save()
-                        print( " "*25*self.getInstanceId(), "FREESPACE-STOP" )
-                        sys.stdout.flush()
+                        counters['CURRENT_TAPE'] = ''
+                        self.manager.setStatus( self, "Idle, FREESPACE-STOP", counters )
                         time.sleep(10)
                     else:
                         if ( job.status != "RESTORING" ):
                             job.status = "RESTORING"
                             job.save()
-                        print( " "*25*self.getInstanceId(), str(jf['tapeId'])+": "+str(jf['startblock']) )
-                        sys.stdout.flush()
+                        self.manager.setStatus( self, "Restoring: %s" % ( jf['srcpath'] ), counters )
                         Job.copyJF( jf )
                         copiedsize = copiedsize + jf['size']
+                        counters['COPIED_BYTES'] = copiedsize
+                        self.manager.setCounters( self, counters )
                         idleTimer = 0
                 else:
+                    counters['JOBID'] = 0
+                    self.manager.setStatus( self, "Idle", counters )
                     time.sleep(1)
                     idleTimer = idleTimer + 1
                     if idleTimer == 600 or TapeCollection.isThereJobForUnlockedTapes(): 
-                        print( " "*25*self.getInstanceId(), "TAPE UNLOADING:" + self.currentTape.label )
-                        sys.stdout.flush()
+                        self.manager.setStatus( self, "Releasing tape: %s" % ( self.currentTape.label ), counters )
                         subprocess.Popen( [ variables.leadm, "tape", "move", "-L", "homeslot", self.currentTape.label ] ).wait()
                         TapeCollection.releaseTape( self.getInstanceId() )
-                        print( " "*25*self.getInstanceId(), "TAPE UNLOCKED:" + self.currentTape.label )
-                        sys.stdout.flush()
+                        counters['CURRENT_TAPE'] = ''
+                        self.manager.setStatus( self, "Idle", counters )
                         self.currentTape = None
-                    
-
         TapeCollection.releaseTape( self.getInstanceId() )

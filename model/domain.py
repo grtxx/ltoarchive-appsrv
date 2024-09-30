@@ -3,6 +3,7 @@ import sys
 from model.folder import Folder
 from model.file import File
 from model.baseentity import BaseEntity
+from model.filecollection import FileCollection
 
 
 class Domain(BaseEntity):
@@ -103,3 +104,14 @@ class Domain(BaseEntity):
             db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE fileId IN (SELECT id FROM files WHERE hash NOT IN (SELECT hash FROM tapeitems)" )
             db.cmd( "DELETE FROM files WHERE domainId=%s " +
                     "AND hash NOT IN (SELECT hash FROM tapeitems) ", [ self.id(), self.domainId ] )
+            
+    def search( self, qstr, page ):
+        if self.isValid():
+            db = variables.getScopedDb()
+            fc = FileCollection()
+            fc.setFilter( "domainId", self.id() )
+            fc.setFilter( "qstr", qstr )
+            fc.setLimit( page * 20, 20 );
+            return fc.getData()
+        else:
+            return [];

@@ -19,6 +19,24 @@ class threadlist:
 
 
 
+    def setMessage( self, thd, msg ):
+        for t in self.threadList:
+            if t['thread'] == thd:
+                t['message'] = msg
+
+    def setCounters( self, thd, counters ):
+        for t in self.threadList:
+            if t['thread'] == thd:
+                t['counters'] = counters
+
+
+    def setStatus( self, thd, message, counters ):
+        for t in self.threadList:
+            if t['thread'] == thd:
+                t['message'] = message
+                t['counters'] = counters
+
+
     def getThreadCount( self, thdName, mode='running' ):
         cnt = 0
         for t in self.threadList:
@@ -82,6 +100,6 @@ class threadlist:
     def add( self, thr, name ):
         thr.name = name
         thr.manager = self
-        self.threadList.append( { 'name': name, 'thread': thr, 'status': 'waiting' } )
+        self.threadList.append( { 'name': name, 'thread': thr, 'status': 'waiting', 'message': '', 'counters': {} } )
 
 

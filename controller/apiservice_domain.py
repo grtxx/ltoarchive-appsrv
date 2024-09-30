@@ -10,6 +10,7 @@ class ApiService_domain( ApiService_base ):
     def getRoutes( self ):
         routes = [
             { "method": "get",    "auth": False, "target": self.getDomainList,        "pattern": r"^domain/list$" },
+            { "method": "get",    "auth": False, "target": self.searchContent,        "pattern": r"^domain/(.+)/searchcontent$" },
             { "method": "get",    "auth": False, "target": self.getFolderContents,    "pattern": r"^domain/(.+)/content/(\d+)$" },
             { "method": "delete", "auth": False, "target": self.dropDomain,           "pattern": r"^domain/(.+)$" },
             { "method": "put",    "auth": True,  "target": self.putDomain,            "pattern": r"^domain/new$" },
@@ -70,5 +71,15 @@ class ApiService_domain( ApiService_base ):
                     return RouteResult( 202, "domain-reactivated", {} )
                 else:
                     return RouteResult( 201, "already-exists", {} )
+        except Exception as e:
+            return RouteResult( 500, "server-error", { "message": str(e) } )
+
+
+    def searchContent( self, groups, session ):
+        try:
+            domain = Domain.createByName( groups[1] )
+            qstr = session._requestHandler.get_argument( 'qstr', '' )
+            page = session._requestHandler.get_argument( 'page', 0 )
+            return RouteResult( 200, "ok", { 'domain': domain.name, 'qstr': qstr, 'page': page, 'result': domain.search( qstr, page ) } )
         except Exception as e:
             return RouteResult( 500, "server-error", { "message": str(e) } )
