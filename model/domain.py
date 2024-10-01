@@ -57,6 +57,14 @@ class Domain(BaseEntity):
         self.save()
 
 
+    def getSize( self ):
+        db = variables.getScopedDb()
+        cur = db.cursor()
+        cur.execute( "SELECT IFNULL(sum(size),0) AS s FROM %sfolders WHERE ISNULL(parentFolderId) AND domainId=%%s" % (variables.TablePrefix, ), ( self.id(), ) )
+        size = cur.fetchOneDict()
+        cur.reset()
+        return size["s"]
+
     def rangedExecute( self, db, sql, records ):
         while len(records) > 0:
             recsforsql = []

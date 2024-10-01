@@ -39,7 +39,7 @@ class ApiService_domain( ApiService_base ):
         domains = DomainCollection()
         domainList = ()
         for dom in domains:
-            domainList = domainList + ( { "id": dom.id(), "name": dom.name }, )
+            domainList = domainList + ( { "id": dom.id(), "name": dom.name, "size": dom.getSize() }, )
         return RouteResult( 200, "ok", domainList )
 
 
@@ -78,8 +78,11 @@ class ApiService_domain( ApiService_base ):
     def searchContent( self, groups, session ):
         try:
             domain = Domain.createByName( groups[1] )
+            if ( domain.isValid() == False ):
+                return RouteResult( 404, "not-found", { 'message': 'domain-not-found' } )
+            
             qstr = session._requestHandler.get_argument( 'qstr', '' )
             page = session._requestHandler.get_argument( 'page', 0 )
-            return RouteResult( 200, "ok", { 'domain': domain.name, 'qstr': qstr, 'page': page, 'result': domain.search( qstr, page ) } )
+            return RouteResult( 200, "ok", { 'domain': domain.name, 'qstr': qstr, 'page': page, 'items': domain.search( qstr, page ) } )
         except Exception as e:
             return RouteResult( 500, "server-error", { "message": str(e) } )
