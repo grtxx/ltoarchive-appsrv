@@ -87,7 +87,7 @@ class LTOApi(tornado.web.RequestHandler):
             db.commit()
             res = r["target"]( groups, session )
         else:
-            res = RouteResult( 501, "query-not-authenticated", {} )
+            res = RouteResult( 501, "query-not-authenticated", { 'error': 'query-not-authenticated' } )
         self.output( res )
 
 
@@ -102,7 +102,7 @@ class LTOApi(tornado.web.RequestHandler):
                         self.executeRoute( r, groups )
                         routeSucceeded = True
         if ( not routeSucceeded ):
-            self.output( RouteResult( 404, "endpoint-not-found", {} ) )
+            self.output( RouteResult( 404, "endpoint-not-found", { 'error': 'endpoint-not-found' } ) )
 
 
     def output( self, result ):

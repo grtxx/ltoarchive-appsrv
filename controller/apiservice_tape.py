@@ -35,9 +35,9 @@ class ApiService_tape( ApiService_base ):
                 variables.components['drive-controller']['max'] = wmax
                 return RouteResult( 200, "ok", { 'worker-count': variables.components['drive-controller']['max'] } )
             except:
-                return RouteResult( 501, "invalid-request-data", {} )
+                return RouteResult( 501, "invalid-request-data", { 'error': 'invalid-request-data' } )
         else:
-            return RouteResult( 501, "invalid-request-data", {} )
+            return RouteResult( 501, "invalid-request-data", { 'error': 'invalid-request-data' } )
 
 
     def getWorkerCount( self, groups, session ):
