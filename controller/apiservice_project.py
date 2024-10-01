@@ -15,10 +15,13 @@ class ApiService_project( ApiService_base ):
 
     def projectInfo( self, groups, session ):
         d = Domain.createByName( groups[1] )
+        if ( d.isValid() == False ):
+            return RouteResult( 404, "not-found", { 'error': 'domain-not-found' } )
+        
         f = Folder.createByCodeAndDomain( groups[2], d )
         if f.isValid():
-            f.updateSize()
+            #f.updateSize()
             return RouteResult( 200, "ok", { 'folder': f.getData() } )
         else:
-            return RouteResult( 404, "not-found", {} )
+            return RouteResult( 404, "not-found", { 'error': 'folder-not-found' } )
 
