@@ -55,17 +55,33 @@ class Tape(BaseEntity):
 
     def dropContent( self ):
         if ( self.isValid() ):
-            db = variables.getScopedDb()
-            print( "Dropping tape content..." )
-            topFolders = db.readArray( "folderId", "SELECT folderId FROM tapefolders WHERE tapeId=%s, folderId IN (SELECT id FROM folders WHERE ISNULL(parentFolderId))", [ self.id() ] )
-            sys.stdout.flush()
-            db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
-            db.cmd( "DELETE FROM tapefolders WHERE tapeId=%s", [ self.id() ] )
-            #db.cmd( "UPDATE jobfiles SET fileId=NULL WHERE tapeId=%s" % [ self.id() ] )
-            db.cmd( "DELETE FROM files WHERE hash NOT IN (SELECT hash FROM tapeitems)" )
-            db.cmd( "DELETE FROM folders WHERE id NOT IN (SELECT folderId FROM tapefolders ORDER BY folderId DESC)" )
-            self._updateTopFolders( topFolders )
-            self._updateOldVersions( topFolders )
+            try:
+                db = variables.getScopedDb()
+                print( "Dropping tape content..." )
+
+                topFolders = db.readArray( "folderId", "SELECT folderId FROM tapefolders WHERE tapeId=%s, folderId IN (SELECT id FROM folders WHERE ISNULL(parentFolderId))", [ self.id() ] )
+                sys.stdout.flush()
+                print( "  tape items..." )
+                db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
+                print( "  tape folders..." )
+                db.cmd( "DELETE FROM tapefolders WHERE tapeId=%s", [ self.id() ] )
+
+                print( "  orphaned file records..." )
+                db.cmd( "CREATE TEMPORARY TABLE temp_filesToDelete (SELECT files.id AS id FROM files LEFT JOIN tapeitems ON (files.hash=hash) WHERE ISNULL(tapeitems.hash))" )
+                db.cmd( "DELETE FROM files WHERE id IN (SELECT id FROM temp_filesToDelete)" )
+                db.cmd( "DROP TABLE temp_filesToDelete" ) 
+
+                print( "  orphaned folder records..." )
+                db.cmd( "CREATE TEMPORARY TABLE temp_foldersToDelete (SELECT folders.id AS id FROM folders LEFT JOIN tapefolders ON (folders.id=folderId) WHERE ISNULL(tapefolders.folderId))" )
+                db.cmd( "SET FOREIGN_KEY_CHECKS=0" )
+                db.cmd( "UPDATE folders INNER JOIN temp_foldersToDelete ON (folders.id=temp_foldersToDelete.id) SET parentFolderId=NULL, domainId=NULL" )
+                db.cmd( "DELETE FROM folders WHERE id IN (SELECT id FROM temp_foldersToDelete)" )
+                db.cmd( "DROP TABLE temp_foldersToDelete" ) 
+                db.cmd( "SET FOREIGN_KEY_CHECKS=1" )
+                self._updateTopFolders( topFolders )
+                self._updateOldVersions( topFolders )
+            except Exception as err:
+                print( "ERROR: %s" % err )
 
     def drop( self ):
         if ( self.isValid() ):
@@ -78,10 +94,11 @@ class Tape(BaseEntity):
 
     def cloneTo( self, dstTape ):
         try:
+            print( "Dropping content on destination..." )
             dstTape.dropContent();
-            print( "Cloning tape..." )
             sys.stdout.flush()
             db = variables.getScopedDb()
+            print( "Cloning..." )
             db.cmd( "INSERT INTO tapefolders (tapeId, folderId) SELECT %d as tapeId, folderId FROM tapefolders WHERE tapeId=%d" % ( dstTape.id(), self.id() ) )
             db.cmd( "INSERT INTO tapeitems (tapeId, folderId, domainId, hash, startblock, recordcreated) SELECT %d as tapeId, folderId, domainId, hash, startblock, recordcreated FROM tapeitems WHERE tapeId=%d" % ( dstTape.id(), self.id() ) )
         except Exception as err:
@@ -91,6 +108,11 @@ class Tape(BaseEntity):
 
     def updateContent( self ):
         try:
+            db = variables.getScopedDb()
+            print( "Dropping tape content if exists..." );
+            self.dropContent()
+
+            print( "Adding tape..." );
             cartRoot = os.listdir( self.getRoot() )
             domains = []
             for d in cartRoot:

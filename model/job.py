@@ -10,6 +10,10 @@ import shutil
 import requests
 import sys
 
+
+_updatelog = []
+
+
 class Job(BaseEntity):
     _tablename = variables.TablePrefix + 'jobs'
     _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'finished', 'status', 'nexttask', 'webhook' ]
@@ -224,6 +228,26 @@ class Job(BaseEntity):
 
 
     @staticmethod
+    def getNextFilesForTape( tape, count=200 ):
+        db = variables.getScopedDb()
+        db.commit()
+        cur = db.cursor()
+        cur.execute( "SELECT jf.* FROM jobfiles AS jf " +
+            "INNER JOIN jobs AS j ON (j.id=jf.jobId) " +
+            "WHERE tapeId=%s AND " +
+            "j.status IN ('RESTORING','WAITING','FREESPACE-STOP') AND " +
+            "jf.status IN ('WAITING','COPY') " +
+            "ORDER BY (j.status='FREESPACE-STOP'), j.id, startblock LIMIT %s", ( tape.id(), count ) )
+        res = []
+        while True:
+            r = cur.fetchOneDict()
+            if r == None:
+                break
+            res.append(r)
+        return res
+
+
+    @staticmethod
     def getNextFileForTape( tape ):
         db = variables.getScopedDb()
         db.commit()
@@ -238,11 +262,28 @@ class Job(BaseEntity):
 
 
     @staticmethod
-    def updateJFStatus( jf, status ):
+    def updateJFStatus( jf, status, force=False ):
+        if ( force ):
+            db = variables.getScopedDb()
+            db.commit()
+            db.cmd( "UPDATE jobfiles SET status=%s, finished=now() WHERE id=%s", ( status, jf['id'] ) )
+            job = Job( jf['jobId'] )
+            job.updateStatus()
+        else:
+            _updatelog.append( { 'jf': jf, 'status': status } )
+            if ( len( _updatelog ) > 100 ):
+                Job.flushLog()
+
+
+    @staticmethod
+    def flushLog():
         db = variables.getScopedDb()
-        db.cmd( "UPDATE jobfiles SET status=%s, finished=now() WHERE id=%s", ( status, jf['id'] ) )
-        job = Job( jf['jobId'] )
-        job.updateStatus()
+        db.commit()
+        for up in _updatelog:
+            db.cmd( "UPDATE jobfiles SET status=%s, finished=now() WHERE id=%s", ( up['status'], up['jf']['id'] ) )
+            job = Job( up['jf']['jobId'] )
+            job.updateStatus()
+        _updatelog.clear()
 
 
     @staticmethod

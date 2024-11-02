@@ -21,6 +21,7 @@ class Domain(BaseEntity):
         if ( id == None ):
             tp = Domain()
             tp.set( 'name', name )
+            ts.set( 'isActive', True )
             return tp
         else:
             return Domain( id["id"] )

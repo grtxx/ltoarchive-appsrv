@@ -38,31 +38,40 @@ class DriveControllerThread( BaseThread ):
                     sys.stdout.flush()
                     #subprocess.Popen( [ variables.leadm, "tape", "move", "-L", "drive", self.currentTape.label ] ).wait()
             else:
-                jf = Job.getNextFileForTape( self.currentTape )
-                if jf != None:
-                    job = Job( jf['jobId'] )
-                    counters['JOBID'] = jf['jobId']
-                    try:
-                        total, used, free = shutil.disk_usage( jf['dstfs'] )
-                    except:
-                        free = 10 * (2**30)
-                    if ( free < 500 * (2**30) and copiedsize > 100*1024*1024*1024 ):
-                        copiedsize = 0
-                        job.status = "FREESPACE-STOP"
-                        job.save()
-                        counters['CURRENT_TAPE'] = ''
-                        self.manager.setStatus( self, "Idle, FREESPACE-STOP", counters )
-                        time.sleep(10)
-                    else:
-                        if ( job.status != "RESTORING" ):
-                            job.status = "RESTORING"
+                jfs = Job.getNextFilesForTape( self.currentTape )
+                lastCopyPos = 0
+                if len(jfs) > 0:
+                    for jf in jfs:
+                        job = Job( jf['jobId'] )
+                        counters['JOBID'] = jf['jobId']
+                        try:
+                            total, used, free = shutil.disk_usage( jf['dstfs'] )
+                        except:
+                            free = 10 * (2**30)
+                        if ( free < 500 * (2**30) and copiedsize > 100*1024*1024*1024 ):
+                            copiedsize = 0
+                            job.status = "FREESPACE-STOP"
                             job.save()
-                        self.manager.setStatus( self, "Restoring: %s" % ( jf['srcpath'] ), counters )
-                        Job.copyJF( jf )
-                        copiedsize = copiedsize + jf['size']
-                        counters['COPIED_BYTES'] = copiedsize
-                        self.manager.setCounters( self, counters )
-                        idleTimer = 0
+                            job.flushLog()
+                            counters['CURRENT_TAPE'] = ''
+                            self.manager.setStatus( self, "Idle, FREESPACE-STOP", counters )
+                            time.sleep(10)
+                        else:
+                            if ( job.status != "RESTORING" ):
+                                job.status = "RESTORING"
+                                job.save()
+                                job.flushLog()
+                            self.manager.setStatus( self, "Restoring: %s" % ( jf['srcpath'] ), counters )
+                            print( "  copy:" + jf['srcpath'] )
+                            Job.copyJF( jf )
+                            copiedsize = copiedsize + jf['size']
+                            counters['COPIED_BYTES'] = copiedsize
+                            self.manager.setCounters( self, counters )
+                            if ( copiedsize > (2**30) ):
+                                job.flushLog()
+                                self.lastCopyPos = copiedsize
+                            idleTimer = 0
+                    job.flushLog()
                 else:
                     counters['JOBID'] = 0
                     counters['COPIED_BYTES'] = 0

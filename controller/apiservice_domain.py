@@ -37,6 +37,7 @@ class ApiService_domain( ApiService_base ):
 
     def getDomainList( self, groups, session ):
         domains = DomainCollection()
+        domains.setFilter( 'isActive', True )
         domainList = ()
         for dom in domains:
             domainList = domainList + ( { "id": dom.id(), "name": dom.name, "size": dom.getSize() }, )
