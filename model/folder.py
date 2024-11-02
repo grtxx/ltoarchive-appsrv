@@ -1,9 +1,10 @@
 import model.variables as variables
+import datetime
 from model.baseentity import BaseEntity
 
 class Folder(BaseEntity):
     _tablename = variables.TablePrefix + 'folders'
-    _fields = [ 'domainId', 'name', 'size', 'created', 'isDeleted', 'parentFolderId' ]
+    _fields = [ 'domainId', 'name', 'size', 'created', 'isDeleted', 'parentFolderId', 'recordcreated' ]
     _orderField = "name, id"  
 
 
@@ -39,6 +40,7 @@ class Folder(BaseEntity):
             f.parentFolder = parentFolder
             f.domainId = domain.id()
             f.name = name
+            f.recordcreated = datetime.datetime.now()
         else:
             f = Folder( fId['id'] )
         return f

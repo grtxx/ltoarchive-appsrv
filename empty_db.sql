@@ -64,7 +64,7 @@ CREATE TABLE `domains` (
   `isActive` tinyint(1) DEFAULT NULL,
   `copyCount` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `ix_ArchiveDomain_name` (`name`)
+  KEY `idx_ArchiveDomain_name` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -87,18 +87,20 @@ CREATE TABLE `files` (
   `isOnline` tinyint(1) DEFAULT 0,
   `isDeleted` tinyint(1) DEFAULT 0,
   `isOldVersion` tinyint(1) DEFAULT 0,
+  `recordcreated` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `udx_namehash` (`name`,`hash`,`parentFolderId`,`domainId`),
   KEY `archiveDomainId` (`domainId`),
   KEY `parentFolderId` (`parentFolderId`),
-  KEY `ix_File_created` (`created`),
-  KEY `ix_File_name` (`name`),
-  KEY `ix_File_isOnline` (`isOnline`),
-  KEY `ix_File_isDeleted` (`isDeleted`),
-  KEY `ix_File_ext` (`ext`),
-  KEY `ix_File_hash` (`hash`),
-  KEY `ix_File_size` (`size`),
+  KEY `idx_File_created` (`created`),
+  KEY `idx_File_name` (`name`),
+  KEY `idx_File_isOnline` (`isOnline`),
+  KEY `idx_File_isDeleted` (`isDeleted`),
+  KEY `idx_File_ext` (`ext`),
+  KEY `idx_File_hash` (`hash`),
+  KEY `idx_File_size` (`size`),
   KEY `idx_isOldVersion` (`isOldVersion`),
+  KEY `idx_recordcreated` (`recordcreated`),
   CONSTRAINT `files_ibfk_1` FOREIGN KEY (`domainId`) REFERENCES `domains` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=18863023 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -118,13 +120,15 @@ CREATE TABLE `folders` (
   `created` datetime DEFAULT NULL,
   `isDeleted` tinyint(1) DEFAULT NULL,
   `parentFolderId` int(11) DEFAULT NULL,
+  `recordcreated` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `archiveDomainId` (`domainId`),
   KEY `parentFolderId` (`parentFolderId`),
-  KEY `ix_Folder_created` (`created`),
-  KEY `ix_Folder_name` (`name`),
-  KEY `ix_Folder_size` (`size`),
-  KEY `ix_Folder_isDeleted` (`isDeleted`),
+  KEY `idx_Folder_created` (`created`),
+  KEY `idx_Folder_name` (`name`),
+  KEY `idx_Folder_size` (`size`),
+  KEY `idx_Folder_isDeleted` (`isDeleted`),
+  KEY `idx_recordcreated` (`recordcreated`),
   CONSTRAINT `folders_ibfk_1` FOREIGN KEY (`domainId`) REFERENCES `domains` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=179428 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -240,12 +244,14 @@ CREATE TABLE `tapeitems` (
   `domainId` int(11) DEFAULT NULL,
   `hash` varbinary(48) DEFAULT NULL,
   `startblock` bigint(20) DEFAULT NULL,
+  `recordcreated` datetime DEFAULT NULL,
   PRIMARY KEY (`item_id`),
   UNIQUE KEY `udx_hashfoldertape` (`folderId`,`tapeId`,`domainId`,`hash`),
   KEY `idx_startblock` (`startblock`),
   KEY `fk_tapeitems_tapeId` (`tapeId`),
   KEY `fk_tapeitems` (`domainId`),
   KEY `idx_hash` (`hash`),
+  KEY `idx_recordcreated` (`recordcreated`),
   CONSTRAINT `fk_tapeitems` FOREIGN KEY (`domainId`) REFERENCES `domains` (`id`),
   CONSTRAINT `fk_tapeitems_folderId` FOREIGN KEY (`folderId`) REFERENCES `folders` (`id`),
   CONSTRAINT `fk_tapeitems_tapeId` FOREIGN KEY (`tapeId`) REFERENCES `tapes` (`id`)
@@ -268,7 +274,7 @@ CREATE TABLE `tapes` (
   `created` datetime DEFAULT NULL,
   `lockedBy` varbinary(32) DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `ix_Tape_copyNumber` (`copyNumber`)
+  KEY `idx_Tape_copyNumber` (`copyNumber`)
 ) ENGINE=InnoDB AUTO_INCREMENT=49684 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

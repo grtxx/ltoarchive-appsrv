@@ -45,6 +45,7 @@ class File(BaseEntity):
             f.domainId = domain.id()
             f.name = name
             f.hash = hash
+            f.recordcreated = datetime.datetime.now()
         else:
             f = File( fId['id'] )
         return f

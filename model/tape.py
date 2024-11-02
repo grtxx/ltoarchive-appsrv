@@ -83,7 +83,7 @@ class Tape(BaseEntity):
             sys.stdout.flush()
             db = variables.getScopedDb()
             db.cmd( "INSERT INTO tapefolders (tapeId, folderId) SELECT %d as tapeId, folderId FROM tapefolders WHERE tapeId=%d" % ( dstTape.id(), self.id() ) )
-            db.cmd( "INSERT INTO tapeitems (tapeId, folderId, domainId, hash, startblock) SELECT %d as tapeId, folderId, domainId, hash, startblock FROM tapeitems WHERE tapeId=%d" % ( dstTape.id(), self.id() ) )
+            db.cmd( "INSERT INTO tapeitems (tapeId, folderId, domainId, hash, startblock, recordcreated) SELECT %d as tapeId, folderId, domainId, hash, startblock, recordcreated FROM tapeitems WHERE tapeId=%d" % ( dstTape.id(), self.id() ) )
         except Exception as err:
             print( "ERROR: %s" % err )
             sys.stdout.flush()

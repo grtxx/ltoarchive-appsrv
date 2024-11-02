@@ -96,8 +96,8 @@ class Domain(BaseEntity):
             delrecs.append( delrec )
         if len( recs ) > 0:
             self.rangedExecute( db, "DELETE FROM %sfiles WHERE parentFolderId=%%s AND domainId=%%s AND hash=%%s" % ( variables.TablePrefix, ), delrecs )
-            self.rangedExecute( db, "INSERT IGNORE INTO %stapeitems (tapeId, domainId, folderId, hash, startblock) VALUES (%%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs )
-            self.rangedExecute( db, "INSERT IGNORE INTO %sfiles (parentFolderId, domainId, name, ext, hash, size, created) VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s)" % ( variables.TablePrefix, ), recs2 )
+            self.rangedExecute( db, "INSERT IGNORE INTO %stapeitems (tapeId, domainId, folderId, hash, startblock, recordcreated) VALUES (%%s, %%s, %%s, %%s, %%s, now())" % ( variables.TablePrefix, ), recs )
+            self.rangedExecute( db, "INSERT IGNORE INTO %sfiles (parentFolderId, domainId, name, ext, hash, size, created, recordcreated) VALUES (%%s, %%s, %%s, %%s, %%s, %%s, %%s, now())" % ( variables.TablePrefix, ), recs2 )
         db.commit()
 
 
