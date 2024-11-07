@@ -57,27 +57,36 @@ class Tape(BaseEntity):
         if ( self.isValid() ):
             try:
                 db = variables.getScopedDb()
+                db.commit()
                 print( "Dropping tape content..." )
 
                 topFolders = db.readArray( "folderId", "SELECT folderId FROM tapefolders WHERE tapeId=%s, folderId IN (SELECT id FROM folders WHERE ISNULL(parentFolderId))", [ self.id() ] )
                 sys.stdout.flush()
                 print( "  tape items..." )
+                db.cmd( "CREATE TEMPORARY TABLE temp_tapefiles SELECT hash FROM tapeitems WHERE tapeId=%s" % ( self.id() ) )
                 db.cmd( "DELETE FROM tapeitems WHERE tapeId=%s", [ self.id() ] )
                 print( "  tape folders..." )
+                db.cmd( "CREATE TEMPORARY TABLE temp_tapefolders SELECT folderId AS id FROM tapefolders WHERE tapeId=%s" % ( self.id() ) )
                 db.cmd( "DELETE FROM tapefolders WHERE tapeId=%s", [ self.id() ] )
 
                 print( "  orphaned file records..." )
-                db.cmd( "CREATE TEMPORARY TABLE temp_filesToDelete (SELECT files.id AS id FROM files LEFT JOIN tapeitems ON (files.hash=hash) WHERE ISNULL(tapeitems.hash))" )
+                db.cmd( "CREATE TEMPORARY TABLE temp_filesToDelete " +
+                       "(SELECT hash AS id FROM temp_tapefiles LEFT JOIN tapeitems ON (temp_tapefiles.hash=tapeitems.hash) WHERE ISNULL(tapeitems.hash))" )
                 db.cmd( "DELETE FROM files WHERE id IN (SELECT id FROM temp_filesToDelete)" )
                 db.cmd( "DROP TABLE temp_filesToDelete" ) 
 
                 print( "  orphaned folder records..." )
-                db.cmd( "CREATE TEMPORARY TABLE temp_foldersToDelete (SELECT folders.id AS id FROM folders LEFT JOIN tapefolders ON (folders.id=folderId) WHERE ISNULL(tapefolders.folderId))" )
+                db.cmd( "CREATE TEMPORARY TABLE temp_foldersToDelete " +
+                       "(SELECT id FROM temp_tapefolders WHERE id NOT IN (SELECT DISTINCT folderId FROM tapefolders)" )
                 db.cmd( "SET FOREIGN_KEY_CHECKS=0" )
                 db.cmd( "UPDATE folders INNER JOIN temp_foldersToDelete ON (folders.id=temp_foldersToDelete.id) SET parentFolderId=NULL, domainId=NULL" )
                 db.cmd( "DELETE FROM folders WHERE id IN (SELECT id FROM temp_foldersToDelete)" )
                 db.cmd( "DROP TABLE temp_foldersToDelete" ) 
                 db.cmd( "SET FOREIGN_KEY_CHECKS=1" )
+
+                db.cmd( "DROP TABLE temp_tapefiles" ) 
+                db.cmd( "DROP TABLE temp_tapefolders" ) 
+                
                 self._updateTopFolders( topFolders )
                 self._updateOldVersions( topFolders )
             except Exception as err:
