@@ -16,7 +16,7 @@ _updatelog = []
 
 class Job(BaseEntity):
     _tablename = variables.TablePrefix + 'jobs'
-    _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'finished', 'status', 'nexttask', 'webhook' ]
+    _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'finished', 'status', 'nexttask', 'webhook', 'lasterror' ]
     _orderField = "created DESC, id DESC"
 
 
@@ -180,6 +180,7 @@ class Job(BaseEntity):
                 return True
             else:
                 self.status = "TAPE-INACCESSIBLE"
+                self.lasterror = "Source file not available: %s" % ( f.getFullPath() )
                 self.save()
                 return False
         else:

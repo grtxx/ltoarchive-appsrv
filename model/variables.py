@@ -116,6 +116,10 @@ destinations = {
         'name': 'Jumpcut Work (Z:)',
         'localpath': '/mnt/ULAB/JUMPCUT/Work/_Archive_restored'
     },
+    'IWT': {
+        'name': 'Umbrella IWT',
+        'localpath': '/mnt/ULAB/UMBRELLA/IWT/_restored'
+    },
 }
 
 # LTO related settings

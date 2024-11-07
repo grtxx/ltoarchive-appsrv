@@ -185,6 +185,7 @@ CREATE TABLE `jobs` (
   `nexttask` datetime DEFAULT NULL,
   `webhook` char(250) DEFAULT NULL,
   `finished` datetime DEFAULT NULL,
+  `lasterror` char(250) DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `idx_created` (`created`),
   KEY `idx_status` (`status`),
