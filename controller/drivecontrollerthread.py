@@ -73,6 +73,7 @@ class DriveControllerThread( BaseThread ):
                             idleTimer = 0
                     job.flushLog()
                 else:
+                    job.flushLog()
                     counters['JOBID'] = 0
                     counters['COPIED_BYTES'] = 0
                     self.manager.setStatus( self, "Idle", counters )
