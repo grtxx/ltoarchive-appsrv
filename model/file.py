@@ -81,7 +81,7 @@ class File(BaseEntity):
     def getTapeInfo( self ):
         db = variables.getScopedDb()
         cur = db.cursor( dictionary=True)
-        cur.execute( ("SELECT tapeId, tapes.label, startblock FROM %stapeitems " +
+        cur.execute( ("SELECT tapeId, tapes.label, startblock, isAvailable FROM %stapeitems " +
                      "INNER JOIN %stapes ON (tapes.id=tapeId) WHERE hash=%%s AND domainId=%%s AND folderId=%%s ORDER BY copyNumber") % (variables.TablePrefix, variables.TablePrefix, ), (self.hash, self.domainId, self.parentFolderId ) )
         ti = cur.fetchall()
         return ti
