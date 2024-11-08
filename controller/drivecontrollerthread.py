@@ -67,13 +67,12 @@ class DriveControllerThread( BaseThread ):
                             copiedsize = copiedsize + jf['size']
                             counters['COPIED_BYTES'] = copiedsize
                             self.manager.setCounters( self, counters )
-                            if ( copiedsize > (2**30) ):
+                            if ( copiedsize > 5*(2**30) ):
                                 job.flushLog()
                                 self.lastCopyPos = copiedsize
                             idleTimer = 0
                     job.flushLog()
                 else:
-                    job.flushLog()
                     counters['JOBID'] = 0
                     counters['COPIED_BYTES'] = 0
                     self.manager.setStatus( self, "Idle", counters )
