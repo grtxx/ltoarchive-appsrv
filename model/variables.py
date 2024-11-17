@@ -103,6 +103,7 @@ LTFSRoot = "/mnt/LTFS"
 httpPort = 8000
 Threads = threadlist()
 sessionMap = {}
+jobExecution = True
 destinations = { 
     'UMBRELLA-WORK': {
         'name': 'Umbrella Work',

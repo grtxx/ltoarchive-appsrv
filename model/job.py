@@ -4,6 +4,7 @@ import datetime
 from model.baseentity import BaseEntity
 from model.file import File
 from model.folder import Folder
+from controller.filelistbuilderthread import FilelistBuilderThread
 import json
 import os
 import shutil
@@ -131,6 +132,9 @@ class Job(BaseEntity):
         d['filesizeready'] = self.getFileSize('RESTORED')
         return d
     
+
+    def execute( self ):
+        tc = FilelistBuilderThread( self )
 
     def clearFiles( self ):
         if ( self.isValid() ):

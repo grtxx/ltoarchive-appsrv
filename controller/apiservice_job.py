@@ -56,8 +56,11 @@ class ApiService_job( ApiService_base ):
             j.webhook = params['webhook']
             j.status='PENDING'
             j.save()
-            tc = FilelistBuilderThread( j )
-            return RouteResult( 200, "ok", {} )
+            if ( variables.jobExecution ):
+                j.execute();
+                return RouteResult( 200, "ok", {} )
+            else:
+                return RouteResult( 201, "execution-pending", {} )
         else:
             return RouteResult( 405, "invalid-data", {} )
 
