@@ -3,6 +3,7 @@ from model.job import Job
 from model.jobcollection import JobCollection
 from model.routeresult import RouteResult
 from controller.filelistbuilderthread import FilelistBuilderThread
+import model.variables as variables
 import json
 
 

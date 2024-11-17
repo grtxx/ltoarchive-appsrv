@@ -2,18 +2,42 @@ from controller.apiservice_base import ApiService_base
 from model.routeresult import RouteResult
 from model.jobcollection import JobCollection
 import model.variables as Variables
+import json
 
 
 class ApiService_system( ApiService_base ):
 
     def getRoutes( self ):
         routes = [
-            { "method": "get",    "auth": False, "target": self.getDestionations,           "pattern": r"^destinations$" },
-            { "method": "get",    "auth": False, "target": self.getTasks,                   "pattern": r"^tasks$" },
-            { "method": "get",    "auth": True,  "target": self.getJobExecution,            "pattern": r"^jobexecution$" },
-            { "method": "patch",  "auth": True,  "target": self.setJobExecution,            "pattern": r"^jobexecution$" },
+            { "method": "get",    "auth": True,  "target": self.getDestionations,           "pattern": r"^destinations$" },
+            { "method": "get",    "auth": True,  "target": self.getTasks,                   "pattern": r"^tasks$" },
+            { "method": "get",    "auth": True,  "target": self.getWorkerCount,             "pattern": r"^system/workercount$" },
+            { "method": "patch",  "auth": True,  "target": self.setWorkerCount,             "pattern": r"^system/workercount$" },
+            { "method": "get",    "auth": True,  "target": self.getJobExecution,            "pattern": r"^system/jobexecution$" },
+            { "method": "patch",  "auth": True,  "target": self.setJobExecution,            "pattern": r"^system/jobexecution$" },
         ]
         return routes
+
+
+    def setWorkerCount( self, groups, session ):
+        args = json.loads( self._apiServer.request.body )
+        if 'worker-count' in args:
+            try:
+                wmax =  int(args['worker-count'])
+                if wmax < 0:
+                    wmax = 0
+                if wmax > 500:
+                    wmax = 500
+                Variables.components['drive-controller']['max'] = wmax
+                return RouteResult( 200, "ok", { 'worker-count': variables.components['drive-controller']['max'] } )
+            except:
+                return RouteResult( 501, "invalid-request-data", { 'error': 'invalid-request-data' } )
+        else:
+            return RouteResult( 501, "invalid-request-data", { 'error': 'invalid-request-data' } )
+
+
+    def getWorkerCount( self, groups, session ):
+        return RouteResult( 200, "ok", { 'worker-count': Variables.components['drive-controller']['max'] } )
 
 
     def getJobExecution( self, groups, session ):

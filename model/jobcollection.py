@@ -11,6 +11,6 @@ class JobCollection(BaseCollection):
 
 
     def sqlCondition( self, name, value ):
-        #if name == "label":
-        #    return {  "sql": "tapes.label=\%s", "vars": ( value ) }
+        if name == "status":
+            return {  "sql": "jobs.status=%s", "vars": [ value ] }
         pass
