@@ -9,7 +9,7 @@ class ApiService_system( ApiService_base ):
 
     def getRoutes( self ):
         routes = [
-            { "method": "get",    "auth": True,  "target": self.getDestionations,           "pattern": r"^destinations$" },
+            { "method": "get",    "auth": True,  "target": self.getDestinations,            "pattern": r"^destinations$" },
             { "method": "get",    "auth": True,  "target": self.getTasks,                   "pattern": r"^tasks$" },
             { "method": "get",    "auth": True,  "target": self.getWorkerCount,             "pattern": r"^system/workercount$" },
             { "method": "patch",  "auth": True,  "target": self.setWorkerCount,             "pattern": r"^system/workercount$" },
@@ -56,7 +56,7 @@ class ApiService_system( ApiService_base ):
         return RouteResult( 200, "ok", { 'jobexecution': Variables.jobExecution } )
 
 
-    def getDestionations( self, groups, session ):
+    def getDestinations( self, groups, session ):
         dsts = []
         for d in Variables.destinations:
             dsts.append( { 'id': d, 'name': Variables.destinations[d]['name'] } )
