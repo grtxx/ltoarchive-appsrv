@@ -29,7 +29,7 @@ class ApiService_system( ApiService_base ):
                 if wmax > 500:
                     wmax = 500
                 Variables.components['drive-controller']['max'] = wmax
-                return RouteResult( 200, "ok", { 'worker-count': variables.components['drive-controller']['max'] } )
+                return RouteResult( 200, "ok", { 'worker-count': Variables.components['drive-controller']['max'] } )
             except:
                 return RouteResult( 501, "invalid-request-data", { 'error': 'invalid-request-data' } )
         else:
