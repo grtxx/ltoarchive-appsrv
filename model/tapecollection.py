@@ -30,7 +30,7 @@ class TapeCollection(BaseCollection):
             + "INNER JOIN jobfiles AS jf ON (t.id=jf.tapeId) "
             + "INNER JOIN jobs AS j ON (j.id=jf.jobId) "
             + "WHERE ISNULL(t.lockedBy) AND jf.status='WAITING' AND j.status IN ('WAITING', 'RESTORING') "
-            + "ORDER BY jf.created "
+            + "ORDER BY IF(j.status='WAITING',0,1), jf.created "
             + "LIMIT 1)", ( instanceId, ) )
         t = Tape.createByInstanceId( instanceId )
         if not t.isValid():
