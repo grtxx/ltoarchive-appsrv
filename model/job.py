@@ -284,9 +284,13 @@ class Job(BaseEntity):
     def flushLog():
         db = variables.getScopedDb()
         db.commit()
+        jobs = [];
         for up in _updatelog:
             db.cmd( "UPDATE jobfiles SET status=%s, finished=now() WHERE id=%s", ( up['status'], up['jf']['id'] ) )
-            job = Job( up['jf']['jobId'] )
+            if up['jf']['jobId'] not in jobs:
+                jobs.append( up['jf']['jobId'] )
+        for j in jobs:
+            job = Job( j )
             job.updateStatus()
         _updatelog.clear()
 
