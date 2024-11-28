@@ -57,7 +57,7 @@ class DriveControllerThread( BaseThread ):
                             self.manager.setStatus( self, "Idle, FREESPACE-STOP", counters )
                             time.sleep(10)
                         else:
-                            if ( job.status != "RESTORING" ):
+                            if ( job.status != "RESTORING" and job.status != "PAUSED" ):
                                 job.status = "RESTORING"
                                 job.save()
                                 job.flushLog()
