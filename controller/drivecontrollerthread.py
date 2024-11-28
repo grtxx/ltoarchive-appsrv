@@ -71,6 +71,9 @@ class DriveControllerThread( BaseThread ):
                                 job.flushLog()
                                 self.lastCopyPos = copiedsize
                             idleTimer = 0
+                        
+                        if ( self.terminating ):
+                            break;
                     job.flushLog()
                 else:
                     counters['JOBID'] = 0

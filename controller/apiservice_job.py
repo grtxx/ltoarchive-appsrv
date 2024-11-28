@@ -56,14 +56,14 @@ class ApiService_job( ApiService_base ):
             j.username = params['username']
             j.webhook = params['webhook']
             j.status='PENDING'
-            j.save()
-            if ( variables.jobExecution ):
-                j.execute();
-                return RouteResult( 200, "ok", {} )
-            else:
-                return RouteResult( 201, "execution-pending", {} )
-        else:
-            return RouteResult( 405, "invalid-data", {} )
+            if ( j.src != None and j.dststorage != None and j.email != None and j.username != None ):
+                j.save()
+                if ( variables.jobExecution ):
+                    j.execute();
+                    return RouteResult( 200, "ok", {} )
+                else:
+                    return RouteResult( 201, "execution-pending", {} )
+        return RouteResult( 405, "invalid-data", {} )
 
 
     def continueJob( self, groups, session ):
