@@ -192,6 +192,9 @@ class Job(BaseEntity):
         elif len(statuslist)==2 and 'DELETED' in statuslist and 'KEPT' in statuslist:
             self.status = 'KEPT-DELETED'
             self.save()
+        elif len(statuslist)==1 and 'KEPT' in statuslist:
+            self.status = 'KEPT-DELETED'
+            self.save()
         elif self.status != 'PAUSED' and len(statuslist)>1 and (('COPY' in statuslist) or ('RESTORED' in statuslist) ):
             self.status = 'RESTORING'
             self.save()

@@ -39,6 +39,7 @@ class JobCleanerThread( BaseThread ):
             for j in jobs:
                 self.manager.setStatus( self, "Deleting job: %d" % j.id(), {} )
                 j.status = 'DELETING'
+                j.save();
                 nfs = j.getNextFiles( 'RESTORED', 50 )
                 folders = []
                 while ( len(nfs) > 0 ):
@@ -46,7 +47,7 @@ class JobCleanerThread( BaseThread ):
                         ok = False
                         if ( os.path.isfile( jf['dstpath'] ) ):
                             stt = os.stat( jf['dstpath'] )
-                            if ( jf['filecreationdate'] == None or jf['filecreationdate'].timestamp() == stt.st_ctime ):
+                            if ( jf['filecreationdate'] == None or jf['filecreationdate'].timestamp() == int(stt.st_mtime) ):
                                 if ( stt.st_size == jf['size'] ):
                                     print( "Deleting: %s" % ( jf['dstpath'] ) )
                                     ok = True
