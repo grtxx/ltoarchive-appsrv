@@ -174,7 +174,7 @@ CREATE TABLE `jobfiles` (
 DROP TABLE IF EXISTS `jobs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `jobs` (
+ CREATE TABLE `jobs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `created` datetime DEFAULT NULL,
   `email` char(150) DEFAULT NULL,
@@ -186,12 +186,14 @@ CREATE TABLE `jobs` (
   `webhook` char(250) DEFAULT NULL,
   `finished` datetime DEFAULT NULL,
   `lasterror` char(250) DEFAULT '',
+  `nexttask_sent` tinyint(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `idx_created` (`created`),
   KEY `idx_status` (`status`),
   KEY `idx_nexttask` (`nexttask`),
-  KEY `idx_finished` (`finished`)
-) ENGINE=InnoDB AUTO_INCREMENT=143 DEFAULT CHARSET=utf8;
+  KEY `idx_finished` (`finished`),
+  KEY `idx_nexttask_sent` (`nexttask_sent`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

@@ -17,7 +17,7 @@ _updatelog = []
 
 class Job(BaseEntity):
     _tablename = variables.TablePrefix + 'jobs'
-    _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'finished', 'status', 'nexttask', 'webhook', 'lasterror' ]
+    _fields = [ 'email', 'username', 'src', 'dststorage', 'created', 'finished', 'status', 'nexttask', 'nexttask_sent', 'webhook', 'lasterror' ]
     _orderField = "created DESC, id DESC"
 
 
@@ -30,6 +30,8 @@ class Job(BaseEntity):
             if self.status != value:
                 if value=='RESTORED':
                     self.finished=datetime.datetime.now()
+                    self.nexttask = datetime.datetime.now() + datetime.timedelta( days=7 )
+                    self.nexttask_sent = 0
         super().__setattr__(name, value)
         if name == 'status' and value == 'RESTORED':
             if ( self.webhook != None and self.webhook != "" ):
@@ -77,7 +79,9 @@ class Job(BaseEntity):
             db = variables.getScopedDb()
             cur = db.cursor()
             cur.execute( "SELECT sum(size) AS s FROM jobfiles WHERE jobId=%s", ( self._id, ) )
-            return cur.fetchOneDict()['s']
+            res = cur.fetchOneDict()['s']
+            cur.reset()
+            return res
         else:
             return 0;
 
@@ -90,9 +94,28 @@ class Job(BaseEntity):
                 cur.execute( "SELECT count(*) AS c FROM jobfiles WHERE jobId=%s", ( self._id, ) )
             else:
                 cur.execute( "SELECT count(*) AS c FROM jobfiles WHERE jobId=%s AND status=%s", ( self._id, status ) )
-            return cur.fetchOneDict()['c']
+            res = cur.fetchOneDict()['c']
+            cur.reset()
+            return res
         else:
             return 0;
+
+
+    def getNextFiles( self, status, count ):
+        if ( self.isValid() ):
+            db = variables.getScopedDb()
+            cur = db.cursor()
+            cur.execute( "SELECT * FROM jobfiles WHERE jobId=%s AND status=%s LIMIT %s", ( self._id, status, count ) )
+            res = []
+            row = cur.fetchOneDict()
+            while ( row != None ):
+                res.append( row )
+                row = cur.fetchOneDict()
+            return res
+        else:
+            return []
+        
+        
 
 
     def getFileSize( self, status = '' ):
@@ -103,7 +126,9 @@ class Job(BaseEntity):
                 cur.execute( "SELECT IFNULL(sum(size),0) AS c FROM jobfiles WHERE jobId=%s", ( self._id, ) )
             else:
                 cur.execute( "SELECT IFNULL(sum(size),0) AS c FROM jobfiles WHERE jobId=%s AND status=%s", ( self._id, status ) )
-            return cur.fetchOneDict()['c']
+            res = cur.fetchOneDict()['c']
+            cur.reset()
+            return res
         else:
             return 0;
 
@@ -113,7 +138,9 @@ class Job(BaseEntity):
             db = variables.getScopedDb()
             cur = db.cursor()
             cur.execute( "SELECT COUNT(DISTINCT tapeId) AS tc FROM jobfiles WHERE jobId=%s", ( self._id, ) )
-            return cur.fetchOneDict()['tc']
+            res = cur.fetchOneDict()['tc']
+            cur.reset()
+            return res
         else:
             return 0;
 
@@ -135,6 +162,7 @@ class Job(BaseEntity):
 
     def execute( self ):
         tc = FilelistBuilderThread( self )
+
 
     def clearFiles( self ):
         if ( self.isValid() ):
@@ -158,6 +186,12 @@ class Job(BaseEntity):
         elif len(statuslist)==1 and 'RESTORED' in statuslist:
             self.status = 'RESTORED'
             self.save()
+        elif len(statuslist)==1 and 'DELETED' in statuslist:
+            self.status = 'DELETED'
+            self.save()
+        elif len(statuslist)==2 and 'DELETED' in statuslist and 'KEPT' in statuslist:
+            self.status = 'KEPT-DELETED'
+            self.save()
         elif self.status != 'PAUSED' and len(statuslist)>1 and (('COPY' in statuslist) or ('RESTORED' in statuslist) ):
             self.status = 'RESTORING'
             self.save()
@@ -168,7 +202,7 @@ class Job(BaseEntity):
             db = variables.getScopedDb()
             fsp = f.getFirstUsableFileSysPathStruct()
             if fsp != None:
-                db.cmd( "INSERT INTO jobfiles (jobId, tapeId, fileId, srcpath, dstpath, dstfs, startblock, size, status, created) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, now())",
+                db.cmd( "INSERT INTO jobfiles (jobId, tapeId, fileId, srcpath, dstpath, dstfs, startblock, size, filecreationdate, status, created) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now())",
                     (
                         self.id(), 
                         fsp['tape'].id(), 
@@ -178,15 +212,16 @@ class Job(BaseEntity):
                         dstconfig['localpath'],
                         f.getStartBlock( fsp['tape'] ), 
                         f.size,
+                        f.created,
                         'WAITING',
                     ) 
                 )
                 return True
             else:
-                self.status = "TAPE-INACCESSIBLE"
+#               self.status = "TAPE-INACCESSIBLE"
                 self.lasterror = "Source file not available: %s" % ( f.getFullPath() )
                 self.save()
-                return False
+                return True
         else:
             raise Exception( "Cannot add file, job is not valid" )
 
@@ -232,6 +267,25 @@ class Job(BaseEntity):
                 self.save()
 
 
+    def sendDeleteWarning( self ):
+        if ( self.webhook != None and self.webhook != "" ):
+            print( "Sending delete warning to %s" % self.webhook )
+            r = requests.post( self.webhook + "?event=deletewarning", data=json.dumps( self.getData(), default=str ) )
+            if ( r.status_code == 200 ):
+                return True
+            else:
+                return r
+
+
+    def keep( self ):
+        if ( self.status != "RESTORED" or not self.isValid() ):
+            return False
+        self.nexttask_sent = 0
+        self.nexttask = datetime.datetime.now() + datetime.timedelta(days=7)
+        self.save() 
+        return True
+
+
     @staticmethod
     def getNextFilesForTape( tape, count=200 ):
         db = variables.getScopedDb()
@@ -240,12 +294,13 @@ class Job(BaseEntity):
         cur.execute( "SELECT jf.* FROM jobfiles AS jf " +
             "INNER JOIN jobs AS j ON (j.id=jf.jobId) " +
             "WHERE tapeId=%s AND " +
-            "j.status IN ('RESTORING','WAITING','FREESPACE-STOP') AND " +
+            "j.status IN ('RESTORING','WAITING','FREESPACE-STOP','TAPE OPERATIONS') AND " +
             "jf.status IN ('WAITING','COPY') " +
             "ORDER BY (j.status='FREESPACE-STOP'), j.id, startblock LIMIT %s", ( tape.id(), count ) )
         res = []
         while True:
             r = cur.fetchOneDict()
+            cur.reset();
             if r == None:
                 break
             res.append(r)
@@ -260,10 +315,12 @@ class Job(BaseEntity):
         cur.execute( "SELECT jf.* FROM jobfiles AS jf " +
             "INNER JOIN jobs AS j ON (j.id=jf.jobId) " +
             "WHERE tapeId=%s AND " +
-            "j.status IN ('RESTORING','WAITING','FREESPACE-STOP') AND " +
+            "j.status IN ('RESTORING','WAITING','FREESPACE-STOP','TAPE OPERATIONS') AND " +
             "jf.status IN ('WAITING','COPY') " +
             "ORDER BY (j.status='FREESPACE-STOP'), j.id, startblock LIMIT 1", ( tape.id(), ) )
-        return cur.fetchOneDict()
+        res = cur.fetchOneDict()
+        cur.reset()
+        return res;
 
 
     @staticmethod
@@ -322,3 +379,5 @@ class Job(BaseEntity):
             except:
                 pass
         Job.updateJFStatus( jf, 'RESTORED' )
+
+

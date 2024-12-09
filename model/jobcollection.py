@@ -12,5 +12,12 @@ class JobCollection(BaseCollection):
 
     def sqlCondition( self, name, value ):
         if name == "status":
-            return {  "sql": "jobs.status=%s", "vars": [ value ] }
+            if isinstance( value, str ):
+                return {  "sql": "jobs.status=%s", "vars": [ value ] }
+            else:
+                return {  "sql": "jobs.status IN (" + "%s,"*len(value) + "-1)", "vars": value }
+        if name == "max_nexttask":
+            return {  "sql": "jobs.nexttask<%s", "vars": [ value ] }
+        if name == "nexttask_sent":
+            return {  "sql": "jobs.nexttask_sent=%s", "vars": [ value ] }
         pass

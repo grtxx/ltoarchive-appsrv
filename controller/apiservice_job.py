@@ -17,6 +17,7 @@ class ApiService_job( ApiService_base ):
             { "method": "delete", "auth": True,  "target": self.dropJob,              "pattern": r"^job/(\d+)$" },
             { "method": "patch",  "auth": True,  "target": self.continueJob,          "pattern": r"^job/(\d+)/continue$" },
             { "method": "patch",  "auth": True,  "target": self.pauseJob,             "pattern": r"^job/(\d+)/pause$" },
+            { "method": "patch",  "auth": True,  "target": self.keepJob,              "pattern": r"^job/(\d+)/keep$" },
         ]
         return routes
 
@@ -85,6 +86,17 @@ class ApiService_job( ApiService_base ):
             if ( job.status == "RESTORING" or job.status == "TAPE-OPERATIONS" or job.status == "FREESPACE-STOP" ):
                 job.status = "PAUSED"
                 job.save() 
+                return RouteResult( 200, "ok", {} )
+            else:
+                return RouteResult( 406, "invalid-status", {} )
+        else:
+            return RouteResult( 404, "not-found", {} ) 
+        
+
+    def keepJob( self, groups, session ):
+        job = Job( groups[1] )
+        if ( job.isValid() ):
+            if job.keep():
                 return RouteResult( 200, "ok", {} )
             else:
                 return RouteResult( 406, "invalid-status", {} )

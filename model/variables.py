@@ -95,6 +95,18 @@ components = {
         'autocreate': True,
         'className': 'TapeCheckerThread',
         'import': 'controller.tapecheckerthread'
+    },
+    'job-checker': {
+        'max': 1,
+        'autocreate': True,
+        'className': 'JobCheckerThread',
+        'import': 'controller.jobcheckerthread'
+    },
+    'job-cleaner': {
+        'max': 1,
+        'autocreate': True,
+        'className': 'JobCleanerThread',
+        'import': 'controller.jobcleanerthread'
     }
 }
 
