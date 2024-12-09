@@ -31,6 +31,7 @@ class JobCleanerThread( BaseThread ):
                 pass
 
     def run( self ):
+        db = variables.getScopedDb()
         while not self.terminating:
             jobs = JobCollection()
             jobs.setFilter( "status", [ "RESTORED", "DELETING" ] )
@@ -70,3 +71,4 @@ class JobCleanerThread( BaseThread ):
             Job.flushLog()
             self.manager.setStatus( self, "Idle", {} )
             time.sleep(30)
+            db.commit()
