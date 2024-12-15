@@ -102,7 +102,7 @@ class LTOApi(tornado.web.RequestHandler):
                         self.executeRoute( r, groups )
                         routeSucceeded = True
         if ( not routeSucceeded ):
-            self.output( RouteResult( 404, "endpoint-not-found", { 'error': 'endpoint-not-found' } ) )
+            self.output( RouteResult( 404, "endpoint-not-found", { 'error': 'endpoint-not-found', 'uri': uri, 'method': self.request.method.lower() } ) )
 
 
     def output( self, result ):
