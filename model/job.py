@@ -303,10 +303,10 @@ class Job(BaseEntity):
         res = []
         while True:
             r = cur.fetchOneDict()
-            cur.reset();
             if r == None:
                 break
             res.append(r)
+        cur.reset();
         return res
 
 

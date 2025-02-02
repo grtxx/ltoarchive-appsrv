@@ -20,6 +20,7 @@ class DriveControllerThread( BaseThread ):
         counters = { 'CURRENT_TAPE': '', 'COPIED_BYTES': 0, 'JOBID': 0 }
         idleTimer = 0
         copiedsize = 0
+        lastflush = 0
         print ( "%s started. InstanceId=%d" % ( self.name, self.getInstanceId() ) )
         sys.stdout.flush()
         while not self.terminating and self.getInstanceId() < self.manager.getMaxInstanceCount( self.name ):
@@ -32,6 +33,7 @@ class DriveControllerThread( BaseThread ):
                     idleTimer = idleTimer + 1
                 else:
                     copiedsize = 0
+                    lastflush = 0
                     counters['CURRENT_TAPE'] = self.currentTape.label
                     self.manager.setMessage( self, "Locking tape %s" % ( self.currentTape.label ) )
                     self.manager.setCounters( self, counters )
@@ -50,6 +52,7 @@ class DriveControllerThread( BaseThread ):
                             free = 10 * (2**30)
                         if ( free < 500 * (2**30) and copiedsize > 100*1024*1024*1024 ):
                             copiedsize = 0
+                            lastflush = 0
                             job.status = "FREESPACE-STOP"
                             job.save()
                             job.flushLog()
@@ -67,7 +70,8 @@ class DriveControllerThread( BaseThread ):
                             copiedsize = copiedsize + jf['size']
                             counters['COPIED_BYTES'] = copiedsize
                             self.manager.setCounters( self, counters )
-                            if ( copiedsize > 5*(2**30) ):
+                            if ( ( copiedsize - lastflush ) > 5*(2**30) ):
+                                lastflush = copiedsize
                                 job.flushLog()
                                 self.lastCopyPos = copiedsize
                             idleTimer = 0
