@@ -10,7 +10,7 @@ class ApiService_domain( ApiService_base ):
     def getRoutes( self ):
         routes = [
             { "method": "get",    "auth": False, "target": self.getDomainList,        "pattern": r"^domain/list$" },
-            { "method": "get",    "auth": False, "target": self.searchContent,        "pattern": r"^domain/(.+)/searchcontent$" },
+            { "method": "post",   "auth": False, "target": self.searchContent,        "pattern": r"^domain/(.+)/searchcontent$" },
             { "method": "get",    "auth": False, "target": self.getFolderContents,    "pattern": r"^domain/(.+)/content/(\d+)$" },
             { "method": "delete", "auth": False, "target": self.dropDomain,           "pattern": r"^domain/(.+)$" },
             { "method": "put",    "auth": True,  "target": self.putDomain,            "pattern": r"^domain/new$" },
@@ -81,9 +81,15 @@ class ApiService_domain( ApiService_base ):
             domain = Domain.createByName( groups[1] )
             if ( domain.isValid() == False ):
                 return RouteResult( 404, "not-found", { 'message': 'domain-not-found' } )
-            
-            qstr = session._requestHandler.get_argument( 'qstr', '' )
-            page = session._requestHandler.get_argument( 'page', 0 )
+            args = json.loads( self._apiServer.request.body )
+            qstr = args["qstr"]
+            page = args["page"]
+#            qstr = session._requestHandler.get_argument( 'qstr', '' )
+#            page = session._requestHandler.get_argument( 'page', 0 )
+            try:
+                page = int(page)
+            except:
+                page = 0
             return RouteResult( 200, "ok", { 'domain': domain.name, 'qstr': qstr, 'page': page, 'items': domain.search( qstr, page ) } )
         except Exception as e:
             return RouteResult( 500, "server-error", { "message": str(e) } )
