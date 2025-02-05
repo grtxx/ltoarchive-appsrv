@@ -116,6 +116,10 @@ class Domain(BaseEntity):
             
     def search( self, qstr, page ):
         if self.isValid():
+            try:
+                page = int(page)
+            except:
+                page = 0
             db = variables.getScopedDb()
             fc = FileCollection()
             fc.setFilter( "domainId", self.id() )
