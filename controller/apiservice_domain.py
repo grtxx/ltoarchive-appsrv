@@ -82,8 +82,8 @@ class ApiService_domain( ApiService_base ):
             if ( domain.isValid() == False ):
                 return RouteResult( 404, "not-found", { 'message': 'domain-not-found' } )
             args = json.loads( self._apiServer.request.body )
-            qstr = args["qstr"]
-            page = args["page"]
+            qstr = args["qstr"] if "qstr" in args else "--NONE--"
+            page = args["page"] if "page" in args else "0"
 #            qstr = session._requestHandler.get_argument( 'qstr', '' )
 #            page = session._requestHandler.get_argument( 'page', 0 )
             try:
