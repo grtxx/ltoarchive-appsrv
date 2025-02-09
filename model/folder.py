@@ -67,9 +67,17 @@ class Folder(BaseEntity):
     @staticmethod
     def createByPathAndDomain( path, domain ):
         db = variables.getScopedDb()
-        path = path.split( "/" )
-        currentParent = None
         f = None
+        fId = -1
+        if path == "/":
+            f = Folder()
+            f.parentFolder = None
+            f.domainId = domain.id()
+            f.name = "/"
+            return f
+        else:
+            path = path.split( "/" )
+            currentParent = None
         for p in path:
             if ( p != "" ):
                 cur = db.cursor()
@@ -80,10 +88,7 @@ class Folder(BaseEntity):
                 fId = cur.fetchOneDict()
                 cur.reset()
                 if ( fId == None ):
-                    f = Folder()
-                    f.parentFolder = currentParent
-                    f.domainId = domain.id()
-                    f.name = p
+                    return None
                 else:
                     f = Folder( fId['id'] )
                 currentParent = f.id()

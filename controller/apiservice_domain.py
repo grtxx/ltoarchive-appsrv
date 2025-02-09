@@ -12,6 +12,7 @@ class ApiService_domain( ApiService_base ):
             { "method": "get",    "auth": False, "target": self.getDomainList,        "pattern": r"^domain/list$" },
             { "method": "post",   "auth": False, "target": self.searchContent,        "pattern": r"^domain/(.+)/searchcontent$" },
             { "method": "get",    "auth": False, "target": self.getFolderContents,    "pattern": r"^domain/(.+)/content/(\d+)$" },
+            { "method": "get",    "auth": False, "target": self.ls,                   "pattern": r"^domain/(.+)/ls$" },
             { "method": "delete", "auth": False, "target": self.dropDomain,           "pattern": r"^domain/(.+)$" },
             { "method": "put",    "auth": True,  "target": self.putDomain,            "pattern": r"^domain/new$" },
         ]
@@ -33,6 +34,24 @@ class ApiService_domain( ApiService_base ):
             return RouteResult( 200, "ok", contents );
         else:
             return RouteResult( 404, "not-found", {} );
+
+
+    def ls( self, groups, session ):
+        folderpath = session.getRequestHandler().get_argument( 'folder', "/" )
+        top = int(session.getRequestHandler().get_argument( 't', 0 ))
+        count = int(session.getRequestHandler().get_argument( 'c', 1000000000 ))
+        dom = Domain.createByName( groups[1] )
+        folder = dom.getFolder( path=folderpath )
+        if ( folder ):
+            if ( folder.isValid() or folder._id == 0 ):
+                contents = []
+                if ( int(top) <= 0 or top == None ):
+                    for f in folder.getSubFolders().getData():
+                        contents.append( { 'type': 'folder', 'data': f } )
+                for f in folder.getFiles( top, count ).getData( flags='wtapeinfo' ):
+                    contents.append( { 'type': 'file', 'data': f } )
+                return RouteResult( 200, "ok", contents );
+        return RouteResult( 404, "not-found", {} );
 
 
     def getDomainList( self, groups, session ):
