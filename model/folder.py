@@ -1,5 +1,6 @@
 import model.variables as variables
 import datetime
+import re
 from model.baseentity import BaseEntity
 
 class Folder(BaseEntity):
@@ -76,7 +77,7 @@ class Folder(BaseEntity):
             f.name = "/"
             return f
         else:
-            path = path.split( "/" )
+            path = re.split( "[\\\\/]", path )
             currentParent = None
         for p in path:
             if ( p != "" ):
