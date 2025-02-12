@@ -4,6 +4,7 @@ import datetime
 from model.baseentity import BaseEntity
 from model.file import File
 from model.folder import Folder
+from model.domain import Domain
 from controller.filelistbuilderthread import FilelistBuilderThread
 import json
 import os
@@ -246,10 +247,22 @@ class Job(BaseEntity):
             for sel in src['sel']:
                 type = sel['type']
                 if ( type == 'file' ):
-                    id = sel['data']['id']
-                    filelist.append( File( id ) )
+                    id = -1
+                    if "id" in sel['data']:
+                        id = sel['data']['id']
+                        filelist.append( File( id ) )
+                    if "path" in sel['data'] and "domain" in sel["data"]:
+                        f = File.createByPathAndDomain( sel["data"]["path"], Domain.createByName( sel["data"]["domain"] ) )
+                        if f:
+                            filelist.append( f )
+
                 if ( type == 'folder' ):
-                    stack.append( Folder( sel['data']['id'] ) )
+                    if "id" in sel["data"]: 
+                        stack.append( Folder( sel['data']['id'] ) )
+                    if "path" in sel["data"] and "domain" in sel["data"]:
+                        fol = Folder.createByPathAndDomain( sel["data"]["path"], Domain.createByName( sel["data"]["domain"] ) )
+                        if fol:
+                            stack.append( fol )
 
             while len( stack ) > 0:
                 folder = stack.pop()

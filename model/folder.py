@@ -85,7 +85,7 @@ class Folder(BaseEntity):
                 if currentParent == None:
                     cur.execute( "SELECT id FROM %sfolders WHERE name=%%s AND ISNULL(parentFolderId) AND domainId=%%s LIMIT 1" % (variables.TablePrefix, ), ( p, domain.id() ) )
                 else:
-                    cur.execute( "SELECT id FROM %sfolders WHERE name=%%s AND parentFolderId=%%s AND domainId=%%s LIMIT 1" % (variables.TablePrefix, ), ( p, currentParent, domain.id() ) )
+                    cur.execute( "SELECT id FROM %sfolders WHERE name=%%s AND parentFolderId=%%s AND domainId=%%s LIMIT 1" % (variables.TablePrefix, ), ( str(p), currentParent, domain.id() ) )
                 fId = cur.fetchOneDict()
                 cur.reset()
                 if ( fId == None ):

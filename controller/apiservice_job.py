@@ -57,7 +57,7 @@ class ApiService_job( ApiService_base ):
             j.username = params['username']
             j.webhook = params['webhook']
             j.status='PENDING'
-            if ( j.src != None and j.dststorage != None and j.email != None and j.username != None ):
+            if ( j.src != None and j.dststorage != None and j.email != None and j.username != None and len( json.loads( j.src )["sel"] ) > 0 ):
                 j.save()
                 if ( variables.jobExecution ):
                     j.execute();

@@ -29,6 +29,22 @@ class File(BaseEntity):
 
 
     @staticmethod
+    def createByPathAndDomain( path, domain ):
+        db = variables.getScopedDb()
+        grs = re.search("^(.*)[\\\\/]([^\\\\/]*)$", path, re.IGNORECASE )
+        if not grs:
+            return None
+        else:
+            folder = Folder.createByPathAndDomain( grs.group(1), domain )
+            if folder:
+                for f in folder.getFiles():
+                    if f.name == grs.group(2):
+                        return f
+        return None
+
+
+
+    @staticmethod
     def createFile( domain, parentFolder, name, hash):
         db = variables.getScopedDb()
         f = None
