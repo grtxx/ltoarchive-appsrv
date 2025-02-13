@@ -244,25 +244,34 @@ class Job(BaseEntity):
             src = json.loads( self.src )
             filelist = []
             stack = []
+            src2 = { 'sel': [], 'unsel': src['unsel'] }
             for sel in src['sel']:
                 type = sel['type']
                 if ( type == 'file' ):
                     id = -1
+                    afile = None
                     if "id" in sel['data']:
                         id = sel['data']['id']
-                        filelist.append( File( id ) )
+                        afile = File( id )
                     if "path" in sel['data'] and "domain" in sel["data"]:
                         f = File.createByPathAndDomain( sel["data"]["path"], Domain.createByName( sel["data"]["domain"] ) )
                         if f:
-                            filelist.append( f )
+                            afile = f
+                    if afile:
+                        filelist.append( afile )
+                        sel['data']['fullpath'] = afile.getFullPath()
+                        src2['sel'].append( sel )
 
                 if ( type == 'folder' ):
+                    afol = None
                     if "id" in sel["data"]: 
-                        stack.append( Folder( sel['data']['id'] ) )
+                        afol = Folder( sel['data']['id'] )
                     if "path" in sel["data"] and "domain" in sel["data"]:
-                        fol = Folder.createByPathAndDomain( sel["data"]["path"], Domain.createByName( sel["data"]["domain"] ) )
-                        if fol:
-                            stack.append( fol )
+                        afol = Folder.createByPathAndDomain( sel["data"]["path"], Domain.createByName( sel["data"]["domain"] ) )
+                    if afol:
+                        stack.append( afol )
+                        sel['data']['fullpath'] = afol.getFullPath()
+                        src2['sel'].append( sel )
 
             while len( stack ) > 0:
                 folder = stack.pop()
@@ -274,6 +283,7 @@ class Job(BaseEntity):
                         filelist.append( f )
 
             self.clearFiles()
+            self.src = json.dumps( src2 )
             dstconfig = variables.getDestinationConfig( self.dststorage )
             ok = True
             for f in filelist:
